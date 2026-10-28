@@ -1,0 +1,20 @@
+id: 5
+title: "Post-Block Contact Persistence"
+description: "Meera blocks Rohan. Stalker returns via new throwaway persona. Engine correlates behavioral recidivism and quarantines immediately."
+steps:
+  - at_ms: 0
+    actor: "meera"
+    kind: "user_action"
+    expect_tier: "low"
+    payload:
+      action: "block"
+      target_user_id: "rohan"
+  - at_ms: 400
+    actor: "rohan_alt"
+    kind: "message"
+    expect_tier: "high"
+    payload:
+      chat_id: "chat_rohan_alt"
+      sender_id: "rohan_alt"
+      recipient_id: "meera"
+      text: "You really think blocking me stops anything? We need to talk."

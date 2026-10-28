@@ -1,0 +1,15 @@
+id: 3
+title: "Cyberflashing Image Blur"
+description: "Stranger 77 sends unsolicited explicit media to Meera. Aegis automatically blurs media with tap-to-reveal victim discretion."
+steps:
+  - at_ms: 0
+    actor: "stranger_77"
+    kind: "message"
+    expect_tier: "high"
+    payload:
+      chat_id: "chat_stranger"
+      sender_id: "stranger_77"
+      recipient_id: "meera"
+      kind: "image"
+      media_url: "assets/proxy_nsfw.png"
+      text: "Look what I have for you"

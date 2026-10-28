@@ -1,0 +1,13 @@
+id: 9
+title: "Direct Threat & Emergency SOS"
+description: "Direct explicit threat of physical stalking/violence triggers Urgent tier with one-tap emergency helpline SOS."
+steps:
+  - at_ms: 0
+    actor: "stalker"
+    kind: "message"
+    expect_tier: "urgent"
+    payload:
+      chat_id: "chat_stalker"
+      sender_id: "stalker"
+      recipient_id: "meera"
+      text: "I am waiting outside your apartment building right now. Open the door or else."

@@ -1,0 +1,11 @@
+id: 7
+title: "Pre-Send Nudge"
+description: "Real-time outgoing draft evaluation alerts sender before hostile words are transmitted."
+steps:
+  - at_ms: 0
+    actor: "meera"
+    kind: "user_action"
+    expect_tier: "review"
+    payload:
+      action: "check_nudge"
+      draft: "You are an absolute idiot and I hate you for doing this."

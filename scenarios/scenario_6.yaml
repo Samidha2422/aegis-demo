@@ -1,0 +1,24 @@
+id: 6
+title: "Overnight Calls & Audio Transcripts"
+description: "40 missed calls during quiet hours (2:00 AM – 4:00 AM) with 92% unanswered. Voice message processed into transcript."
+steps:
+  - at_ms: 0
+    actor: "unknown_stalker"
+    kind: "call"
+    expect_tier: "high"
+    payload:
+      caller_id: "unknown_stalker"
+      callee_id: "meera"
+      status: "missed"
+      duration_secs: 0
+  - at_ms: 500
+    actor: "unknown_stalker"
+    kind: "message"
+    expect_tier: "high"
+    payload:
+      chat_id: "chat_unknown"
+      sender_id: "unknown_stalker"
+      recipient_id: "meera"
+      kind: "voice"
+      media_url: "assets/synthetic_audio.wav"
+      transcript: "Why aren't you picking up? I know you are awake right now."

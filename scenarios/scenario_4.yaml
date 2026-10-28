@@ -1,0 +1,15 @@
+id: 4
+title: "OCR Meme Toxicity"
+description: "Meme image sent with hostile harassment embedded inside image pixels. Engine extracts OCR text and correlates with context."
+steps:
+  - at_ms: 0
+    actor: "rohan"
+    kind: "message"
+    expect_tier: "high"
+    payload:
+      chat_id: "chat_rohan"
+      sender_id: "rohan"
+      recipient_id: "meera"
+      kind: "image"
+      media_url: "assets/screenshot_meme.png"
+      text: "Thought this meme represented your team perfectly"

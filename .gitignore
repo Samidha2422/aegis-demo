@@ -1,0 +1,21 @@
+# Logs and build artifacts
+build-logs/*.log
+build-logs/*.exit
+!build-logs/.gitkeep
+
+# Rust
+chat-server/target/
+chat-server/**/Cargo.lock
+
+# Android & Gradle
+.gradle/
+**/build/
+android-app/.gradle/
+android-app/**/build/
+android-app/local.properties
+android-app/.idea/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db

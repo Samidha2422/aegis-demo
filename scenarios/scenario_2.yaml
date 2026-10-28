@@ -1,0 +1,36 @@
+id: 2
+title: "Coordinated Dogpiling (Graph Modularity)"
+description: "24 hostile comments posted within 10 minutes from throwaway accounts targeting Meera's public post."
+steps:
+  - at_ms: 0
+    actor: "meera"
+    kind: "user_action"
+    expect_tier: "low"
+    payload:
+      action: "create_post"
+      post_id: "post_01"
+      content: "Thrilled to share our design team's latest published research paper!"
+  - at_ms: 300
+    actor: "throwaway_01"
+    kind: "post_comment"
+    expect_tier: "review"
+    payload:
+      post_id: "post_01"
+      author_id: "throwaway_01"
+      content: "Nobody asked for your opinion. Delete your account."
+  - at_ms: 600
+    actor: "bot_cluster_02"
+    kind: "post_comment"
+    expect_tier: "high"
+    payload:
+      post_id: "post_01"
+      author_id: "bot_cluster_02"
+      content: "Complete fraud. We will make sure everyone in your company knows."
+  - at_ms: 900
+    actor: "bot_cluster_03"
+    kind: "post_comment"
+    expect_tier: "high"
+    payload:
+      post_id: "post_01"
+      author_id: "bot_cluster_03"
+      content: "Resign today or this will only get worse. #BoycottMeera"

@@ -1,0 +1,31 @@
+id: 8
+title: "Benign Disagreement (False-Positive Protection)"
+description: "Mutual contacts argue heatedly about project deadlines. Engine recognizes established reciprocity and maintains Low risk."
+steps:
+  - at_ms: 0
+    actor: "diya"
+    kind: "message"
+    expect_tier: "low"
+    payload:
+      chat_id: "chat_diya"
+      sender_id: "diya"
+      recipient_id: "meera"
+      text: "Meera, this deadline delay is totally unacceptable! You completely dropped the ball."
+  - at_ms: 500
+    actor: "meera"
+    kind: "message"
+    expect_tier: "low"
+    payload:
+      chat_id: "chat_diya"
+      sender_id: "meera"
+      recipient_id: "diya"
+      text: "Diya, the design assets were delivered on time. Let's get on a sync call right now to sort it out."
+  - at_ms: 1000
+    actor: "diya"
+    kind: "message"
+    expect_tier: "low"
+    payload:
+      chat_id: "chat_diya"
+      sender_id: "diya"
+      recipient_id: "meera"
+      text: "Fair enough, joining the meeting link now."

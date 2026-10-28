@@ -1,0 +1,49 @@
+id: 1
+title: "Polite Stalking (Frequency Escalation)"
+description: "80 messages sent across 3 hours with 0 replies. Demonstrates behavioral frequency escalation without toxic keywords."
+steps:
+  - at_ms: 0
+    actor: "rohan"
+    kind: "message"
+    expect_tier: "low"
+    payload:
+      chat_id: "chat_rohan"
+      sender_id: "rohan"
+      recipient_id: "meera"
+      text: "Hey Meera! Hope you are having a wonderful morning."
+  - at_ms: 200
+    actor: "rohan"
+    kind: "message"
+    expect_tier: "low"
+    payload:
+      chat_id: "chat_rohan"
+      sender_id: "rohan"
+      recipient_id: "meera"
+      text: "Did you get a chance to see that presentation I sent over?"
+  - at_ms: 500
+    actor: "rohan"
+    kind: "message"
+    expect_tier: "review"
+    payload:
+      chat_id: "chat_rohan"
+      sender_id: "rohan"
+      recipient_id: "meera"
+      text: "Just checking in again. Would love to grab coffee this afternoon if you are free!"
+  - at_ms: 800
+    actor: "rohan"
+    kind: "message"
+    expect_tier: "high"
+    payload:
+      chat_id: "chat_rohan"
+      sender_id: "rohan"
+      recipient_id: "meera"
+      text: "I noticed you were online. Please reply when you see this, it's very important to me."
+  - at_ms: 1200
+    actor: "rohan"
+    kind: "message"
+    expect_tier: "high"
+    payload:
+      chat_id: "chat_rohan"
+      sender_id: "rohan"
+      recipient_id: "meera"
+      text: "Message #80: I know you are reading these. Why are you ignoring me?"
