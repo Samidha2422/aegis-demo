@@ -64,6 +64,11 @@ fun ChatScreen(
         }
     }
 
+    // Only show high-risk alert banner when there is a genuinely high-severity risk threshold breach (>= 70)
+    val hasHighRiskBreach = remember(currentChat, messages) {
+        currentChat.max_tier in listOf("high", "urgent") && messages.any { it.safety.severity >= 70f }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -109,7 +114,7 @@ fun ChatScreen(
                                 }
                             }
                             Text(
-                                text = if (currentChat.participant.is_contact) "Contact" else "Non-contact (SIMULATED)",
+                                text = if (currentChat.participant.is_blocked) "Blocked" else "Active now",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -125,12 +130,22 @@ fun ChatScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = onOpenSafetyCenter) {
-                        Icon(
-                            imageVector = Icons.Outlined.Shield,
-                            contentDescription = "Safety Center",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
+                    if (hasHighRiskBreach) {
+                        IconButton(onClick = onOpenSafetyCenter) {
+                            Icon(
+                                imageVector = Icons.Filled.Shield,
+                                contentDescription = "Safety Center",
+                                tint = SafetyTheme.highRisk
+                            )
+                        }
+                    } else {
+                        IconButton(onClick = onOpenSafetyCenter) {
+                            Icon(
+                                imageVector = Icons.Outlined.Shield,
+                                contentDescription = "Safety Center",
+                                tint = MaterialTheme.colorScheme.outline
+                            )
+                        }
                     }
                     IconButton(onClick = { showMenu = true }) {
                         Icon(
@@ -167,7 +182,7 @@ fun ChatScreen(
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("Report for Harassment") },
+                            text = { Text("Report Conversation") },
                             onClick = {
                                 scope.launch { repository.submitReport(null, currentChat.participant.id, "harassment") }
                                 showMenu = false
@@ -196,11 +211,10 @@ fun ChatScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Pinned Risk Status Banner if elevated
-            if (currentChat.max_tier in listOf("high", "urgent", "review")) {
-                val isUrgent = currentChat.max_tier in listOf("high", "urgent")
+            // Pinned Risk Status Banner: STRICTLY ONLY when high risk breach (>= 70)
+            if (hasHighRiskBreach) {
                 Surface(
-                    color = if (isUrgent) SafetyTheme.highRiskContainer else SafetyTheme.reviewRiskContainer,
+                    color = SafetyTheme.highRiskContainer,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
@@ -211,17 +225,17 @@ fun ChatScreen(
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
-                                    imageVector = if (isUrgent) Icons.Default.Shield else Icons.Default.Shield,
+                                    imageVector = Icons.Default.Shield,
                                     contentDescription = null,
-                                    tint = if (isUrgent) SafetyTheme.highRisk else SafetyTheme.reviewRisk,
+                                    tint = SafetyTheme.highRisk,
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = if (isUrgent) "ELEVATED HARASSMENT RISK (88/100)" else "UNRECIPROCATED BURST DETECTED",
+                                    text = "HARASSMENT THRESHOLD BREACHED (88/100)",
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (isUrgent) SafetyTheme.onHighRiskContainer else SafetyTheme.onReviewRiskContainer
+                                    color = SafetyTheme.onHighRiskContainer
                                 )
                             }
                             TextButton(
@@ -231,13 +245,14 @@ fun ChatScreen(
                                 Text(
                                     text = "Details",
                                     style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.SemiBold
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = SafetyTheme.highRisk
                                 )
                             }
                         }
                         Spacer(modifier = Modifier.height(4.dp))
                         LinearWavyProgressIndicator(
-                            progress = { if (isUrgent) 0.88f else 0.52f },
+                            progress = { 0.88f },
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
@@ -250,24 +265,24 @@ fun ChatScreen(
                     .fillMaxSize()
                     .padding(vertical = 8.dp)
             ) {
-                // Simulation tag header
+                // Discreet simulated date divider
                 item {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 8.dp),
+                            .padding(vertical = 12.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Surface(
                             shape = RoundedCornerShape(12.dp),
-                            color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
                             modifier = Modifier.padding(horizontal = 24.dp)
                         ) {
                             Text(
-                                text = "SIMULATED SCENARIO CONVERSATION",
+                                text = "Today • Simulated Demo Thread",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
                             )
                         }
                     }

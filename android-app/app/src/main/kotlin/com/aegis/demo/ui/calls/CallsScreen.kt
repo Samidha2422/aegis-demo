@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -34,19 +35,23 @@ fun CallsScreen(
 
     var showSimulateDialog by remember { mutableStateOf(false) }
 
+    val hasSpike = remember(calls) {
+        calls.any { it.safety.severity >= 70f }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Column {
                         Text(
-                            text = "Call Records",
+                            text = "Call History",
                             style = MaterialTheme.typography.titleLarge
                         )
                         Text(
-                            text = "Scenario 6: Overnight Call Spillover",
+                            text = if (hasSpike) "Quiet-Hour Repeated Spike Active" else "Recent Voice Activity",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = if (hasSpike) SafetyTheme.highRisk else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 },
@@ -76,85 +81,111 @@ fun CallsScreen(
         },
         modifier = modifier.fillMaxSize()
     ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 16.dp)
-        ) {
-            // Scenario 6 behavioral warning header
-            item {
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = SafetyTheme.criticalRiskContainer
-                    ),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 12.dp)
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.Shield,
-                                contentDescription = "Shield",
-                                tint = SafetyTheme.criticalRisk
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column {
-                                Text(
-                                    text = "QUIET-HOUR CALL SPIKE DETECTED",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = SafetyTheme.criticalRisk
-                                )
-                                Text(
-                                    text = "40 calls between 01:00 AM – 05:30 AM (92% unanswered).",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = SafetyTheme.onCriticalRiskContainer
-                                )
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+        if (calls.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        imageVector = Icons.Outlined.Phone,
+                        contentDescription = null,
+                        modifier = Modifier.size(48.dp),
+                        tint = MaterialTheme.colorScheme.outline
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = "No calls recorded",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(horizontal = 16.dp)
+            ) {
+                // Only display the high-risk banner if there is an active spike
+                if (hasSpike) {
+                    item {
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = SafetyTheme.criticalRiskContainer
+                            ),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 12.dp)
                         ) {
-                            Surface(
-                                shape = RoundedCornerShape(4.dp),
-                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)
-                            ) {
-                                Text(
-                                    text = "Risk: 96/100 (Critical)",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = SafetyTheme.criticalRisk,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                )
-                            }
-                            TextButton(
-                                onClick = onOpenSafetyCenter,
-                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
-                            ) {
-                                Text(
-                                    text = "View in Safety Center",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = SafetyTheme.criticalRisk
-                                )
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Default.Shield,
+                                        contentDescription = "Shield",
+                                        tint = SafetyTheme.criticalRisk
+                                    )
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Column {
+                                        Text(
+                                            text = "QUIET-HOUR CALL SPIKE DETECTED",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = FontWeight.Bold,
+                                            color = SafetyTheme.criticalRisk
+                                        )
+                                        Text(
+                                            text = "40 calls between 01:00 AM – 05:30 AM (92% unanswered).",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = SafetyTheme.onCriticalRiskContainer
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(10.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Surface(
+                                        shape = RoundedCornerShape(4.dp),
+                                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f)
+                                    ) {
+                                        Text(
+                                            text = "Frequency Risk: 96/100",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = FontWeight.Bold,
+                                            color = SafetyTheme.criticalRisk,
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                    TextButton(
+                                        onClick = onOpenSafetyCenter,
+                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
+                                    ) {
+                                        Text(
+                                            text = "View Evidence",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = SafetyTheme.criticalRisk
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            items(calls, key = { it.id }) { call ->
-                CallRecordItem(call = call)
-                HorizontalDivider(
-                    modifier = Modifier.padding(start = 56.dp),
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
-                )
+                items(calls, key = { it.id }) { call ->
+                    CallRecordItem(call = call)
+                    HorizontalDivider(
+                        modifier = Modifier.padding(start = 56.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+                    )
+                }
             }
         }
 
@@ -244,11 +275,21 @@ fun CallRecordItem(
     call: CallRecord,
     modifier: Modifier = Modifier
 ) {
-    val isRisk = call.safety.severity >= 60f
-    val (badgeBg, badgeFg) = if (isRisk) {
-        Pair(SafetyTheme.highRiskContainer, SafetyTheme.onHighRiskContainer)
+    val isRisk = call.safety.severity >= 70f
+    val isMissed = call.status == "missed"
+
+    val displayName = when (call.caller_id) {
+        "unknown_stalker", "unknown" -> "Unknown Caller"
+        "rohan" -> "Rohan (Design Lead)"
+        "diya" -> "Diya Sharma"
+        "ishaan" -> "Ishaan Verma"
+        else -> call.caller_id.replace("_", " ").replaceFirstChar { it.uppercase() }
+    }
+
+    val callDetail = if (isMissed) {
+        "Missed • ${call.timestamp}"
     } else {
-        Pair(MaterialTheme.colorScheme.surfaceContainerHigh, MaterialTheme.colorScheme.onSurfaceVariant)
+        "Answered (${call.duration_secs}s) • ${call.timestamp}"
     }
 
     Row(
@@ -264,9 +305,9 @@ fun CallRecordItem(
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
-                    imageVector = if (call.status == "missed") Icons.Default.PhoneMissed else Icons.Default.PhoneCallback,
+                    imageVector = if (isMissed) Icons.Default.PhoneMissed else Icons.Default.PhoneCallback,
                     contentDescription = null,
-                    tint = if (isRisk) SafetyTheme.highRisk else MaterialTheme.colorScheme.onSecondaryContainer,
+                    tint = if (isMissed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -276,23 +317,31 @@ fun CallRecordItem(
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = call.caller_id,
-                style = MaterialTheme.typography.titleMedium
+                text = displayName,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
             )
             Spacer(modifier = Modifier.height(2.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = "${call.timestamp} • ${call.duration_secs}s",
+                    text = callDetail,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 if (call.safety.simulated) {
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = "• SIMULATED",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.outline
-                    )
+                    Surface(
+                        shape = RoundedCornerShape(3.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerHighest
+                    ) {
+                        Text(
+                            text = "SIMULATED",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                        )
+                    }
                 }
             }
         }
@@ -300,13 +349,13 @@ fun CallRecordItem(
         if (isRisk) {
             Surface(
                 shape = RoundedCornerShape(4.dp),
-                color = badgeBg
+                color = SafetyTheme.highRiskContainer
             ) {
                 Text(
                     text = "Risk: ${call.safety.severity.toInt()}",
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
-                    color = badgeFg,
+                    color = SafetyTheme.onHighRiskContainer,
                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                 )
             }

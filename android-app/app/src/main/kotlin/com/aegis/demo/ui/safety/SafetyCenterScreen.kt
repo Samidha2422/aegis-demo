@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.aegis.demo.di.ServiceLocator
 import com.aegis.demo.ui.components.SeverityMeter
@@ -37,9 +38,9 @@ fun SafetyCenterScreen(
 
     val helplines = remember {
         listOf(
-            HelplineInfo("1930", "National Cyber Crime Portal", "24x7 government reporting portal", Icons.Default.Phone),
-            HelplineInfo("1091", "Women in Distress Helpline", "Police safety dispatch & legal protection", Icons.Default.Security),
-            HelplineInfo("9152987821", "iCall Psychosocial Support", "Confidential counseling & psychological support", Icons.Default.Favorite),
+            HelplineInfo("1930", "National Cyber Crime Portal", "24x7 government cyber harassment reporting", Icons.Default.Phone),
+            HelplineInfo("1091", "Women in Distress Helpline", "Immediate police dispatch & legal safety aid", Icons.Default.Security),
+            HelplineInfo("9152987821", "iCall Psychosocial Support", "Confidential counseling & psychological aid", Icons.Default.Favorite),
             HelplineInfo("741741", "Crisis Support Network", "24/7 text de-escalation & intervention", Icons.Default.Message)
         )
     }
@@ -118,7 +119,7 @@ fun SafetyCenterScreen(
                 }
             }
 
-            // Threat Metrics Breakdown
+            // Threat Metrics Breakdown (Uniform 105dp Heights)
             item {
                 Text(
                     text = "Protection Metric Signals",
@@ -239,7 +240,7 @@ fun SafetyCenterScreen(
                 }
             }
 
-            // Helplines Carousel
+            // Helplines Carousel (Uniform 200dp Heights with Anchored Buttons)
             item {
                 Spacer(modifier = Modifier.height(24.dp))
                 Text(
@@ -276,23 +277,29 @@ fun MetricCard(
     modifier: Modifier = Modifier
 ) {
     OutlinedCard(
-        modifier = modifier,
+        modifier = modifier.height(105.dp),
         shape = RoundedCornerShape(10.dp)
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = value,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
-            Spacer(modifier = Modifier.height(2.dp))
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
             Text(
                 text = subtitle,
                 style = MaterialTheme.typography.bodySmall,
@@ -308,13 +315,19 @@ fun HelplineCard(
     modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = modifier.width(220.dp),
+        modifier = modifier
+            .width(230.dp)
+            .height(200.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainer
         ),
         shape = RoundedCornerShape(12.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Surface(
                     shape = CircleShape,
@@ -341,16 +354,19 @@ fun HelplineCard(
             Text(
                 text = info.name,
                 style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = info.description,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
             )
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.weight(1f))
             FilledTonalButton(
                 onClick = {},
                 modifier = Modifier.fillMaxWidth(),
