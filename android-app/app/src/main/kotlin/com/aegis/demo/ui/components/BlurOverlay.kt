@@ -17,7 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.aegis.demo.ui.theme.SafetyTheme
 
 @Composable
 fun BlurOverlay(
@@ -38,7 +38,7 @@ fun BlurOverlay(
             Box(
                 modifier = Modifier
                     .matchParentSize()
-                    .background(Color.Black.copy(alpha = 0.65f))
+                    .background(Color.Black.copy(alpha = 0.7f))
                     .clickable { onToggleBlur() }
                     .padding(16.dp),
                 contentAlignment = Alignment.Center
@@ -50,40 +50,37 @@ fun BlurOverlay(
                     Icon(
                         imageVector = Icons.Default.Warning,
                         contentDescription = "Sensitive Media",
-                        tint = Color(0xFFFFB74D),
-                        modifier = Modifier.size(32.dp)
+                        tint = SafetyTheme.reviewRisk,
+                        modifier = Modifier.size(28.dp)
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        text = "SENSITIVE MEDIA BLURRED",
+                        text = "POTENTIALLY SENSITIVE MEDIA",
                         color = Color.White,
-                        fontSize = 12.sp,
+                        style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center
                     )
                     Text(
                         text = "DEMO PROXY IMAGE",
-                        color = Color.LightGray,
-                        fontSize = 10.sp,
+                        color = Color.White.copy(alpha = 0.7f),
+                        style = MaterialTheme.typography.labelSmall,
                         textAlign = TextAlign.Center
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Button(
+                    Spacer(modifier = Modifier.height(10.dp))
+                    FilledTonalButton(
                         onClick = onToggleBlur,
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Visibility,
                             contentDescription = null,
-                            modifier = Modifier.size(16.dp),
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = "Tap to Reveal",
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            fontSize = 12.sp,
+                            style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.SemiBold
                         )
                     }

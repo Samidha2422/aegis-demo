@@ -11,7 +11,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.aegis.demo.ui.theme.SafetyTheme
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -22,20 +22,25 @@ fun SeverityMeter(
 ) {
     val normalized = (severity / 100f).coerceIn(0f, 1f)
     val (meterColor, tierLabel, containerColor) = when {
-        severity >= 70f || tier == "high" || tier == "urgent" -> Triple(
-            MaterialTheme.colorScheme.error,
-            tier.uppercase(),
-            MaterialTheme.colorScheme.errorContainer
+        severity >= 85f || tier == "urgent" || tier == "critical" -> Triple(
+            SafetyTheme.criticalRisk,
+            "CRITICAL",
+            SafetyTheme.criticalRiskContainer
+        )
+        severity >= 70f || tier == "high" -> Triple(
+            SafetyTheme.highRisk,
+            "HIGH RISK",
+            SafetyTheme.highRiskContainer
         )
         severity >= 30f || tier == "review" -> Triple(
-            Color(0xFFE65100), // Vibrant Amber/Orange
+            SafetyTheme.reviewRisk,
             "REVIEW",
-            Color(0xFFFFECB3)
+            SafetyTheme.reviewRiskContainer
         )
         else -> Triple(
-            Color(0xFF2E7D32), // Green
+            SafetyTheme.lowRisk,
             "LOW RISK",
-            Color(0xFFE8F5E9)
+            SafetyTheme.lowRiskContainer
         )
     }
 
@@ -43,7 +48,7 @@ fun SeverityMeter(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(containerColor.copy(alpha = 0.3f))
+            .background(containerColor.copy(alpha = 0.4f))
             .padding(12.dp)
     ) {
         Row(
@@ -54,21 +59,20 @@ fun SeverityMeter(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Surface(
                     color = meterColor,
-                    shape = RoundedCornerShape(6.dp)
+                    shape = RoundedCornerShape(4.dp)
                 ) {
                     Text(
                         text = tierLabel,
                         color = Color.White,
-                        fontSize = 11.sp,
+                        style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                     )
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Aegis Risk Engine",
+                    text = "Behavioral Risk Score",
                     style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
@@ -86,11 +90,11 @@ fun SeverityMeter(
             progress = { normalized },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(10.dp),
+                .height(8.dp),
             color = meterColor,
             trackColor = meterColor.copy(alpha = 0.2f),
-            amplitude = { 1.2f },
-            wavelength = 24.dp
+            amplitude = { 1.0f },
+            wavelength = 20.dp
         )
     }
 }

@@ -2,12 +2,13 @@ package com.aegis.demo.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,10 +18,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
 import com.aegis.demo.data.model.SafeMessage
+import com.aegis.demo.ui.theme.SafetyTheme
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SafeMessageBubble(
     message: SafeMessage,
@@ -30,48 +31,45 @@ fun SafeMessageBubble(
 ) {
     var isBlurred by remember { mutableStateOf(message.safety.state == "Blurred") }
     var isHeldExpanded by remember { mutableStateOf(false) }
+    var isVoicePlaying by remember { mutableStateOf(false) }
 
     val safety = message.safety
     val state = safety.state
 
     val bubbleAlignment = if (isSelf) Alignment.End else Alignment.Start
     val bubbleShape = if (isSelf) {
-        RoundedCornerShape(16.dp, 16.dp, 2.dp, 16.dp)
+        RoundedCornerShape(18.dp, 18.dp, 4.dp, 18.dp)
     } else {
-        RoundedCornerShape(16.dp, 16.dp, 16.dp, 2.dp)
+        RoundedCornerShape(18.dp, 18.dp, 18.dp, 4.dp)
     }
 
     val bubbleColor = when {
         isSelf -> MaterialTheme.colorScheme.primaryContainer
         state == "Held" || state == "Hidden" -> MaterialTheme.colorScheme.surfaceVariant
-        state == "Warned" -> Color(0xFFFFF8E1) // Soft amber
-        state == "Escalated" -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
-        else -> MaterialTheme.colorScheme.surfaceContainer
+        state == "Warned" -> SafetyTheme.reviewRiskContainer
+        state == "Escalated" -> SafetyTheme.highRiskContainer
+        else -> MaterialTheme.colorScheme.surfaceContainerHigh
     }
 
     val contentColor = when {
         isSelf -> MaterialTheme.colorScheme.onPrimaryContainer
-        state == "Escalated" -> MaterialTheme.colorScheme.onErrorContainer
+        state == "Warned" -> SafetyTheme.onReviewRiskContainer
+        state == "Escalated" -> SafetyTheme.onHighRiskContainer
         else -> MaterialTheme.colorScheme.onSurface
     }
 
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 4.dp),
+            .padding(horizontal = 16.dp, vertical = 4.dp),
         horizontalAlignment = bubbleAlignment
     ) {
         Surface(
             shape = bubbleShape,
             color = bubbleColor,
-            tonalElevation = 2.dp,
+            tonalElevation = if (isSelf) 0.dp else 1.dp,
             modifier = Modifier
-                .widthIn(max = 320.dp)
-                .then(
-                    if (state == "Warned") Modifier.border(1.dp, Color(0xFFFFB300), bubbleShape)
-                    else if (state == "Escalated") Modifier.border(1.5.dp, MaterialTheme.colorScheme.error, bubbleShape)
-                    else Modifier
-                )
+                .widthIn(max = 310.dp)
                 .clickable {
                     if (safety.severity > 0 || safety.reasons.isNotEmpty()) {
                         onInspectSafety(message)
@@ -84,7 +82,6 @@ fun SafeMessageBubble(
                     SafetyStateHeader(
                         state = state,
                         severity = safety.severity,
-                        simulated = safety.simulated,
                         onInspect = { onInspectSafety(message) }
                     )
                     Spacer(modifier = Modifier.height(8.dp))
@@ -99,7 +96,7 @@ fun SafeMessageBubble(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Aegis analyzing message risk...",
+                                text = "Evaluating behavioral signals...",
                                 style = MaterialTheme.typography.bodySmall,
                                 fontStyle = FontStyle.Italic
                             )
@@ -114,17 +111,17 @@ fun SafeMessageBubble(
                                 tint = MaterialTheme.colorScheme.error,
                                 modifier = Modifier.size(20.dp)
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(modifier = Modifier.width(10.dp))
                             Column {
                                 Text(
                                     text = "Message Held for Safety",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 13.sp,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold,
                                     color = MaterialTheme.colorScheme.error
                                 )
                                 Text(
                                     text = "Automated quarantine based on behavioral risk pattern.",
-                                    fontSize = 11.sp,
+                                    style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
@@ -132,7 +129,7 @@ fun SafeMessageBubble(
 
                         AnimatedVisibility(visible = isHeldExpanded) {
                             Column(modifier = Modifier.padding(top = 8.dp)) {
-                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                                 Spacer(modifier = Modifier.height(6.dp))
                                 Text(
                                     text = message.text,
@@ -142,7 +139,7 @@ fun SafeMessageBubble(
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(6.dp))
+                        Spacer(modifier = Modifier.height(4.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.End
@@ -152,8 +149,8 @@ fun SafeMessageBubble(
                                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
                             ) {
                                 Text(
-                                    text = if (isHeldExpanded) "Hide" else "Reveal (Victim Discretion)",
-                                    fontSize = 11.sp
+                                    text = if (isHeldExpanded) "Hide" else "Reveal (Discretion)",
+                                    style = MaterialTheme.typography.labelSmall
                                 )
                             }
                         }
@@ -170,7 +167,7 @@ fun SafeMessageBubble(
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 text = "SYNTHETIC AUDIO TRANSCRIPT",
-                                fontSize = 10.sp,
+                                style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary
                             )
@@ -184,7 +181,6 @@ fun SafeMessageBubble(
                     }
 
                     else -> {
-                        // Regular or Warned/Blurred message
                         if (message.kind == "image") {
                             BlurOverlay(
                                 isBlurred = isBlurred,
@@ -196,39 +192,124 @@ fun SafeMessageBubble(
                                 Box(
                                     modifier = Modifier
                                         .fillMaxSize()
-                                        .background(Color.DarkGray),
+                                        .background(MaterialTheme.colorScheme.surfaceVariant),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.Image,
+                                        imageVector = Icons.Outlined.Image,
                                         contentDescription = "Demo Image",
-                                        tint = Color.LightGray,
+                                        tint = MaterialTheme.colorScheme.outline,
                                         modifier = Modifier.size(48.dp)
                                     )
-                                    Text(
-                                        text = "DEMO PROXY IMAGE",
-                                        color = Color.White,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold,
+                                    Surface(
+                                        shape = RoundedCornerShape(4.dp),
+                                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
                                         modifier = Modifier
                                             .align(Alignment.BottomCenter)
-                                            .padding(6.dp)
-                                    )
+                                            .padding(8.dp)
+                                    ) {
+                                        Text(
+                                            text = "DEMO PROXY IMAGE",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        )
+                                    }
                                 }
                             }
                             if (message.text.isNotEmpty()) {
-                                Spacer(modifier = Modifier.height(6.dp))
+                                Spacer(modifier = Modifier.height(8.dp))
                                 Text(
                                     text = message.text,
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = contentColor
                                 )
                             }
+                        } else if (message.kind == "audio") {
+                            // Voice Note Waveform representation
+                            Column {
+                                Surface(
+                                    shape = RoundedCornerShape(4.dp),
+                                    color = MaterialTheme.colorScheme.secondaryContainer,
+                                    modifier = Modifier.padding(bottom = 6.dp)
+                                ) {
+                                    Text(
+                                        text = "SYNTHETIC AUDIO (16kHz)",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    IconButton(
+                                        onClick = { isVoicePlaying = !isVoicePlaying },
+                                        modifier = Modifier.size(36.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = if (isVoicePlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                            contentDescription = if (isVoicePlaying) "Pause" else "Play",
+                                            tint = contentColor
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    LinearWavyProgressIndicator(
+                                        progress = { if (isVoicePlaying) 0.6f else 0.1f },
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "0:03",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                if (message.text.isNotBlank()) {
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = message.text,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = contentColor
+                                    )
+                                }
+                            }
                         } else {
                             Text(
                                 text = message.text,
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = contentColor
+                            )
+                        }
+                    }
+                }
+
+                // C1 Baseline Keyword Comparison indicator
+                if (safety.severity >= 60f && !isSelf) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Surface(
+                        shape = RoundedCornerShape(4.dp),
+                        color = SafetyTheme.keywordMissedContainer,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                        ) {
+                            Text(
+                                text = "Keyword: 0 Flags",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = SafetyTheme.keywordMissed
+                            )
+                            Spacer(modifier = Modifier.weight(1f))
+                            Text(
+                                text = "AI Risk: ${safety.severity.toInt()}/100",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = SafetyTheme.engineCaught
                             )
                         }
                     }
@@ -242,13 +323,14 @@ fun SafeMessageBubble(
                 ) {
                     if (safety.simulated) {
                         Surface(
-                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
                             shape = RoundedCornerShape(4.dp)
                         ) {
                             Text(
                                 text = "SIMULATED",
-                                fontSize = 9.sp,
+                                style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
                             )
                         }
@@ -258,8 +340,8 @@ fun SafeMessageBubble(
 
                     Text(
                         text = message.timestamp,
-                        fontSize = 10.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -271,50 +353,54 @@ fun SafeMessageBubble(
 private fun SafetyStateHeader(
     state: String,
     severity: Float,
-    simulated: Boolean,
     onInspect: () -> Unit
 ) {
-    val (icon, label, color) = when (state) {
-        "Warned" -> Triple(Icons.Default.Warning, "FLAGGED BY AEGIS", Color(0xFFF57C00))
-        "Blurred" -> Triple(Icons.Default.VisibilityOff, "SENSITIVE MEDIA BLURRED", Color(0xFFD32F2F))
-        "Held" -> Triple(Icons.Default.Shield, "HELD IN QUARANTINE", MaterialTheme.colorScheme.error)
-        "Escalated" -> Triple(Icons.Default.Security, "CRITICAL HARASSMENT RISK", MaterialTheme.colorScheme.error)
-        "EngineUnavailable" -> Triple(Icons.Default.CloudOff, "OFFLINE RULE ENGINE", Color.Gray)
-        else -> Triple(Icons.Default.Info, state.uppercase(), MaterialTheme.colorScheme.primary)
+    val (icon, label, badgeBg, badgeFg) = when (state) {
+        "Warned" -> Quadruple(Icons.Default.Warning, "FLAGGED BY AEGIS", SafetyTheme.reviewRiskContainer, SafetyTheme.onReviewRiskContainer)
+        "Blurred" -> Quadruple(Icons.Default.VisibilityOff, "SENSITIVE MEDIA BLURRED", SafetyTheme.highRiskContainer, SafetyTheme.onHighRiskContainer)
+        "Held" -> Quadruple(Icons.Default.Shield, "HELD IN QUARANTINE", MaterialTheme.colorScheme.errorContainer, MaterialTheme.colorScheme.onErrorContainer)
+        "Escalated" -> Quadruple(Icons.Default.Security, "CRITICAL RISK", SafetyTheme.criticalRiskContainer, SafetyTheme.onCriticalRiskContainer)
+        "EngineUnavailable" -> Quadruple(Icons.Default.CloudOff, "RULE ENGINE FALLBACK", MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.colorScheme.onSurfaceVariant)
+        else -> Quadruple(Icons.Default.Info, state.uppercase(), MaterialTheme.colorScheme.secondaryContainer, MaterialTheme.colorScheme.onSecondaryContainer)
     }
 
-    Row(
+    Surface(
+        shape = RoundedCornerShape(6.dp),
+        color = badgeBg,
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(6.dp))
-            .background(color.copy(alpha = 0.12f))
             .clickable { onInspect() }
-            .padding(horizontal = 8.dp, vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                imageVector = icon,
-                contentDescription = label,
-                tint = color,
-                modifier = Modifier.size(14.dp)
-            )
-            Spacer(modifier = Modifier.width(6.dp))
-            Text(
-                text = label,
-                color = color,
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
-        if (severity > 0) {
-            Text(
-                text = "Score: ${severity.toInt()}",
-                color = color,
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Bold
-            )
+        Row(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = label,
+                    tint = badgeFg,
+                    modifier = Modifier.size(14.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = label,
+                    color = badgeFg,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            if (severity > 0) {
+                Text(
+                    text = "${severity.toInt()}/100",
+                    color = badgeFg,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }
+
+private data class Quadruple<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)

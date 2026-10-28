@@ -5,21 +5,23 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.aegis.demo.di.ServiceLocator
 import com.aegis.demo.ui.components.SeverityMeter
+import com.aegis.demo.ui.theme.SafetyTheme
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
@@ -35,10 +37,10 @@ fun SafetyCenterScreen(
 
     val helplines = remember {
         listOf(
-            HelplineInfo("1930", "National Cyber Crime Helpline", "Ministry of Home Affairs 24x7 reporting portal", Icons.Default.Phone),
-            HelplineInfo("1091", "Women in Distress Helpline", "Immediate police dispatch & legal safety aid", Icons.Default.Security),
-            HelplineInfo("9152987821", "iCall Psychosocial Support", "Free, confidential emotional support & counseling", Icons.Default.VolunteerActivism),
-            HelplineInfo("741741", "Crisis Support Network", "Text-based 24/7 de-escalation & intervention", Icons.Default.Message)
+            HelplineInfo("1930", "National Cyber Crime Portal", "24x7 government reporting portal", Icons.Default.Phone),
+            HelplineInfo("1091", "Women in Distress Helpline", "Police safety dispatch & legal protection", Icons.Default.Security),
+            HelplineInfo("9152987821", "iCall Psychosocial Support", "Confidential counseling & psychological support", Icons.Default.Favorite),
+            HelplineInfo("741741", "Crisis Support Network", "24/7 text de-escalation & intervention", Icons.Default.Message)
         )
     }
 
@@ -46,11 +48,17 @@ fun SafetyCenterScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        text = "Safety Center & Evidence",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Column {
+                        Text(
+                            text = "Safety Center",
+                            style = MaterialTheme.typography.titleLarge
+                        )
+                        Text(
+                            text = "Incident Evidence & Protection",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             )
         },
@@ -64,35 +72,38 @@ fun SafetyCenterScreen(
         ) {
             // Overall Status Banner
             item {
-                Card(
+                ElevatedCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 12.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
-                    ),
-                    shape = RoundedCornerShape(16.dp)
+                    shape = RoundedCornerShape(12.dp)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.VerifiedUser,
-                                contentDescription = "Active Guard",
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.size(28.dp)
-                            )
-                            Spacer(modifier = Modifier.width(10.dp))
+                            Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                modifier = Modifier.size(36.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Default.Shield,
+                                        contentDescription = "Active Guard",
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
                             Column {
                                 Text(
-                                    text = "AEGIS ENGINE ACTIVE",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    text = "Threat Assessment Summary",
+                                    style = MaterialTheme.typography.titleMedium
                                 )
                                 Text(
-                                    text = "Cross-channel behavioral correlation active",
+                                    text = "Multimodal relational correlation active",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
@@ -100,7 +111,7 @@ fun SafetyCenterScreen(
                         Spacer(modifier = Modifier.height(16.dp))
 
                         SeverityMeter(
-                            severity = 84f,
+                            severity = 88f,
                             tier = "high"
                         )
                     }
@@ -110,9 +121,8 @@ fun SafetyCenterScreen(
             // Threat Metrics Breakdown
             item {
                 Text(
-                    text = "Protection Activity Summary",
+                    text = "Protection Metric Signals",
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
 
@@ -120,8 +130,8 @@ fun SafetyCenterScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    MetricCard(title = "Stalking Throttled", value = "80", subtitle = "Polite volume mitigated", modifier = Modifier.weight(1f))
-                    MetricCard(title = "Nude/NSFW Blurred", value = "1", subtitle = "Demo proxy blocked", modifier = Modifier.weight(1f))
+                    MetricCard(title = "Polite Volume", value = "80 DMs", subtitle = "Throttled (0 replies)", modifier = Modifier.weight(1f))
+                    MetricCard(title = "Sensitive Media", value = "1 Image", subtitle = "Shielded & blurred", modifier = Modifier.weight(1f))
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
@@ -130,8 +140,8 @@ fun SafetyCenterScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    MetricCard(title = "Mob Dogpiles Held", value = "24", subtitle = "Bot cluster quarantined", modifier = Modifier.weight(1f))
-                    MetricCard(title = "Quiet-Hour Calls", value = "40", subtitle = "Night spikes blocked", modifier = Modifier.weight(1f))
+                    MetricCard(title = "Public Dogpiling", value = "24 Posts", subtitle = "Cluster quarantined", modifier = Modifier.weight(1f))
+                    MetricCard(title = "Quiet-Hour Calls", value = "40 Calls", subtitle = "Night spikes blocked", modifier = Modifier.weight(1f))
                 }
             }
 
@@ -139,12 +149,11 @@ fun SafetyCenterScreen(
             item {
                 Spacer(modifier = Modifier.height(24.dp))
                 Text(
-                    text = "Forensic Evidence Dossier",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    text = "Forensic Evidence Bundle",
+                    style = MaterialTheme.typography.titleMedium
                 )
                 Text(
-                    text = "Export cryptographically verifiable timelines for police, legal counsel, or platform reports.",
+                    text = "Export cryptographically verifiable timelines for police, legal counsel, or institutional reports.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -186,34 +195,43 @@ fun SafetyCenterScreen(
                 // Export Output
                 exportResult?.let { result ->
                     Spacer(modifier = Modifier.height(12.dp))
-                    Surface(
-                        color = MaterialTheme.colorScheme.surfaceVariant,
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                        ),
                         shape = RoundedCornerShape(8.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
                                     text = "EVIDENCE INTEGRITY SEAL",
-                                    fontSize = 10.sp,
+                                    style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.primary
                                 )
-                                Text(
-                                    text = "SHA-256 VERIFIED",
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF2E7D32)
-                                )
+                                Surface(
+                                    shape = RoundedCornerShape(4.dp),
+                                    color = SafetyTheme.lowRiskContainer
+                                ) {
+                                    Text(
+                                        text = "SHA-256 VERIFIED",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = SafetyTheme.lowRisk,
+                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                                    )
+                                }
                             }
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(
                                 text = result,
                                 fontFamily = FontFamily.Monospace,
-                                fontSize = 11.sp,
+                                style = MaterialTheme.typography.bodySmall,
                                 maxLines = 8
                             )
                         }
@@ -225,9 +243,8 @@ fun SafetyCenterScreen(
             item {
                 Spacer(modifier = Modifier.height(24.dp))
                 Text(
-                    text = "Emergency Resources & Helplines",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    text = "Emergency Helplines & Resources",
+                    style = MaterialTheme.typography.titleMedium
                 )
                 Spacer(modifier = Modifier.height(10.dp))
 
@@ -248,44 +265,8 @@ data class HelplineInfo(
     val number: String,
     val name: String,
     val description: String,
-    val icon: androidx.compose.ui.graphics.vector.ImageVector
+    val icon: ImageVector
 )
-
-@Composable
-fun HelplineCard(info: HelplineInfo, modifier: Modifier = Modifier) {
-    Card(
-        modifier = modifier.width(220.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Column(modifier = Modifier.padding(14.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(imageVector = info.icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = info.number,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-            Spacer(modifier = Modifier.height(6.dp))
-            Text(
-                text = info.name,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = info.description,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2
-            )
-        }
-    }
-}
 
 @Composable
 fun MetricCard(
@@ -294,30 +275,92 @@ fun MetricCard(
     subtitle: String,
     modifier: Modifier = Modifier
 ) {
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        shape = RoundedCornerShape(12.dp),
-        modifier = modifier
+    OutlinedCard(
+        modifier = modifier,
+        shape = RoundedCornerShape(10.dp)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = value,
-                style = MaterialTheme.typography.headlineMedium,
+                style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = subtitle,
-                fontSize = 10.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.outline
             )
+        }
+    }
+}
+
+@Composable
+fun HelplineCard(
+    info: HelplineInfo,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.width(220.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer
+        ),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.secondaryContainer,
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = info.icon,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    text = info.number,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = info.name,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = info.description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            FilledTonalButton(
+                onClick = {},
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(vertical = 4.dp)
+            ) {
+                Text(
+                    text = "Direct Call",
+                    style = MaterialTheme.typography.labelSmall
+                )
+            }
         }
     }
 }

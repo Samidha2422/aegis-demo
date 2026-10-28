@@ -5,6 +5,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Save
@@ -12,16 +13,15 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.aegis.demo.di.ServiceLocator
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
+    onBack: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val repository = remember { ServiceLocator.getRepository() }
@@ -37,11 +37,25 @@ fun SettingsScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        text = "Settings & Connection",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Column {
+                        Text(
+                            text = "Settings",
+                            style = MaterialTheme.typography.titleLarge
+                        )
+                        Text(
+                            text = "Network & Environment Configuration",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back"
+                        )
+                    }
                 }
             )
         },
@@ -55,11 +69,11 @@ fun SettingsScreen(
                 .verticalScroll(rememberScrollState())
         ) {
             // Replay Mode Switch
-            Card(
+            ElevatedCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 12.dp),
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(12.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(
@@ -70,15 +84,16 @@ fun SettingsScreen(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = "Offline Replay Mode",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
+                                style = MaterialTheme.typography.titleMedium
                             )
+                            Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = "Run full demo with 0 servers using bundled fixtures.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
+                        Spacer(modifier = Modifier.width(16.dp))
                         Switch(
                             checked = isReplayMode,
                             onCheckedChange = { ServiceLocator.setReplayMode(it) }
@@ -89,9 +104,8 @@ fun SettingsScreen(
 
             // Backend URL Config
             Text(
-                text = "Backend Server Connection",
+                text = "Backend Connection",
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(vertical = 8.dp)
             )
 
@@ -99,82 +113,108 @@ fun SettingsScreen(
                 value = inputUrl,
                 onValueChange = { inputUrl = it },
                 label = { Text("Chat Server Base URL") },
-                supportingText = { Text("e.g. http://localhost:8080/ or http://10.0.2.2:8080/") },
+                placeholder = { Text("http://localhost:8080") },
+                singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
-            Button(
+            FilledTonalButton(
                 onClick = {
                     ServiceLocator.setBaseUrl(inputUrl)
                 },
-                modifier = Modifier.align(Alignment.End)
+                modifier = Modifier.align(Alignment.End),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp)
             ) {
                 Icon(imageVector = Icons.Default.Save, contentDescription = null, modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(6.dp))
-                Text("Save Server URL")
+                Text("Save Server URL", style = MaterialTheme.typography.labelSmall)
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Demo State Reset
+            // State Reset Section
             Text(
-                text = "Demo State Management",
+                text = "Demo Maintenance",
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+                modifier = Modifier.padding(vertical = 8.dp)
             )
-            Spacer(modifier = Modifier.height(8.dp))
 
-            OutlinedButton(
-                onClick = {
-                    scope.launch {
-                        repository.resetDemo()
-                        resetStatus = "Demo state reset successfully."
-                    }
-                },
-                modifier = Modifier.fillMaxWidth()
+            OutlinedCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Icon(imageVector = Icons.Default.Refresh, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Reset All Demo Conversations & Alerts")
-            }
-
-            resetStatus?.let { status ->
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = status,
-                    color = Color(0xFF2E7D32),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Honesty Disclosure Card (R5, R6)
-            Card(
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(14.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(imageVector = Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "HONESTY & PRIVACY NOTICE (R5, R6)",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(6.dp))
+                Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "1. All personas, conversations, phone calls, and media in this application are 100% synthetic fixtures created for Hacksploit 2026 PS5.\n2. Aegis demo does not tap actual cellular calls or monitor real-world private communications.\n3. The Harassment Risk Engine evaluates behavioral dynamics across frequency, reciprocity, and post-block persistence.",
+                        text = "Reset Demo State",
+                        style = MaterialTheme.typography.titleSmall
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Flushes local in-memory message history, resets blocklists, and reloads clean scenario fixtures.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    OutlinedButton(
+                        onClick = {
+                            scope.launch {
+                                repository.resetDemo()
+                                resetStatus = "Demo state reset successfully."
+                            }
+                        }
+                    ) {
+                        Icon(imageVector = Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Reset Demo State", style = MaterialTheme.typography.labelSmall)
+                    }
+
+                    resetStatus?.let { status ->
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = status,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Academic & Synthetic Honesty Disclosure
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer
+                ),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = "Transparency",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            text = "Synthetic Data & Privacy Policy",
+                            style = MaterialTheme.typography.titleSmall
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "All personas (Meera, Rohan, Stranger 77), voice notes, images, and phone call logs are 100% synthetic for the Hacksploit 2026 showcase. The app does not access external personal communications or private phone records.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
 

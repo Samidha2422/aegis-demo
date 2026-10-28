@@ -1,7 +1,10 @@
 package com.aegis.demo.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.background
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -15,13 +18,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.aegis.demo.data.model.NudgeResult
+import com.aegis.demo.ui.theme.SafetyTheme
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -43,7 +45,7 @@ fun ComposerFloatingToolbar(
         debounceJob?.cancel()
         if (newText.length >= 4) {
             debounceJob = scope.launch {
-                delay(400) // Debounce 400ms
+                delay(350)
                 val res = onCheckNudge(newText)
                 if (res.nudge_text != null || res.severity >= 50f) {
                     nudgeResult = res
@@ -70,9 +72,15 @@ fun ComposerFloatingToolbar(
             .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
         // Pre-Send Nudge Banner (Scenario 7 / F11)
-        AnimatedVisibility(visible = nudgeResult?.nudge_text != null) {
-            Surface(
-                color = Color(0xFFFFF3E0),
+        AnimatedVisibility(
+            visible = nudgeResult?.nudge_text != null,
+            enter = slideInVertically { it } + fadeIn(),
+            exit = slideOutVertically { it } + fadeOut()
+        ) {
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = SafetyTheme.reviewRiskContainer
+                ),
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -83,47 +91,60 @@ fun ComposerFloatingToolbar(
                         Icon(
                             imageVector = Icons.Default.Warning,
                             contentDescription = "Nudge",
-                            tint = Color(0xFFE65100),
+                            tint = SafetyTheme.reviewRisk,
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = "PRE-SEND SAFETY NUDGE",
-                            fontSize = 11.sp,
+                            style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFFE65100)
+                            color = SafetyTheme.reviewRisk
                         )
                     }
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = nudgeResult?.nudge_text ?: "This message may be hurtful or toxic. Would you like to edit it before sending?",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurface
+                        text = nudgeResult?.nudge_text
+                            ?: "This message may violate communication boundaries. Consider revising before sending.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = SafetyTheme.onReviewRiskContainer
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         TextButton(
                             onClick = { nudgeResult = null },
-                            contentPadding = PaddingValues(horizontal = 8.dp)
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
                         ) {
-                            Text("Send Anyway", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                            Text(
+                                text = "Send Anyway",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                         Spacer(modifier = Modifier.width(8.dp))
-                        Button(
-                            onClick = {
-                                // Keep cursor in draft to edit
-                                nudgeResult = null
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE65100)),
+                        FilledTonalButton(
+                            onClick = { nudgeResult = null },
+                            colors = ButtonDefaults.filledTonalButtonColors(
+                                containerColor = SafetyTheme.reviewRisk,
+                                contentColor = Color.White
+                            ),
                             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
                         ) {
-                            Icon(imageVector = Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(14.dp))
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp)
+                            )
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Edit Message", fontSize = 12.sp)
+                            Text(
+                                text = "Revise Draft",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.SemiBold
+                            )
                         }
                     }
                 }
@@ -152,7 +173,13 @@ fun ComposerFloatingToolbar(
                 TextField(
                     value = text,
                     onValueChange = { handleTextChange(it) },
-                    placeholder = { Text("Message...", fontSize = 14.sp) },
+                    placeholder = {
+                        Text(
+                            text = "Type a message...",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
                     modifier = Modifier.weight(1f),
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = Color.Transparent,

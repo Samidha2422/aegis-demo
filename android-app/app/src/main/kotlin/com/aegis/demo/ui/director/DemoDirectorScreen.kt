@@ -9,25 +9,26 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.aegis.demo.data.model.BaselineComparison
 import com.aegis.demo.data.model.ScenarioProgress
 import com.aegis.demo.di.ServiceLocator
+import com.aegis.demo.ui.theme.SafetyTheme
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DemoDirectorScreen(
+    onBack: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val repository = remember { ServiceLocator.getRepository() }
@@ -38,7 +39,6 @@ fun DemoDirectorScreen(
     var isPlaying by remember { mutableStateOf(false) }
     var currentProgress by remember { mutableStateOf<ScenarioProgress?>(null) }
     var baselineComparison by remember { mutableStateOf<BaselineComparison?>(null) }
-    var showRawJson by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         baselineComparison = repository.getBaselineComparison("chat_rohan")
@@ -64,14 +64,21 @@ fun DemoDirectorScreen(
                 title = {
                     Column {
                         Text(
-                            text = "Demo Director & Scenarios",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
+                            text = "Demo Director",
+                            style = MaterialTheme.typography.titleLarge
                         )
                         Text(
-                            text = "Hacksploit 2026 PS5 Orchestrator",
+                            text = "Interactive Scenario Controller",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back"
                         )
                     }
                 }
@@ -88,9 +95,8 @@ fun DemoDirectorScreen(
             // Scenario Picker Carousel
             item {
                 Text(
-                    text = "Select Behavioral Scenario (1 – 9)",
+                    text = "Select Behavioral Scenario",
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
 
@@ -111,22 +117,23 @@ fun DemoDirectorScreen(
                             Column(modifier = Modifier.padding(12.dp)) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
                                         text = "Scenario ${sc.id}",
-                                        style = MaterialTheme.typography.labelMedium,
+                                        style = MaterialTheme.typography.labelSmall,
                                         fontWeight = FontWeight.Bold,
                                         color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.primary
                                     )
                                     Surface(
-                                        color = if (sc.expectTier == "low") Color(0xFF2E7D32) else MaterialTheme.colorScheme.error,
+                                        color = if (sc.expectTier == "low") SafetyTheme.lowRiskContainer else SafetyTheme.highRiskContainer,
                                         shape = RoundedCornerShape(4.dp)
                                     ) {
                                         Text(
                                             text = sc.expectTier.uppercase(),
-                                            color = Color.White,
-                                            fontSize = 9.sp,
+                                            color = if (sc.expectTier == "low") SafetyTheme.lowRisk else SafetyTheme.highRisk,
+                                            style = MaterialTheme.typography.labelSmall,
                                             fontWeight = FontWeight.Bold,
                                             modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
                                         )
@@ -136,14 +143,13 @@ fun DemoDirectorScreen(
                                 Text(
                                     text = sc.title,
                                     style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.Bold,
                                     maxLines = 1
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
                                     text = sc.desc,
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant,
                                     maxLines = 3
                                 )
                             }
@@ -155,9 +161,8 @@ fun DemoDirectorScreen(
             // Playback Speed Slider & Controls
             item {
                 Spacer(modifier = Modifier.height(16.dp))
-                Surface(
-                    color = MaterialTheme.colorScheme.surfaceContainer,
-                    shape = RoundedCornerShape(16.dp),
+                ElevatedCard(
+                    shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
@@ -167,23 +172,28 @@ fun DemoDirectorScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "Playback Compression Speed",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
+                                text = "Simulation Speed",
+                                style = MaterialTheme.typography.titleMedium
                             )
-                            Text(
-                                text = "${speed.toInt()}x (Demo Speed)",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
+                            Surface(
+                                shape = RoundedCornerShape(4.dp),
+                                color = MaterialTheme.colorScheme.primaryContainer
+                            ) {
+                                Text(
+                                    text = "${speed.toInt()}x Multiplier",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
                         }
 
                         Slider(
                             value = speed,
                             onValueChange = { speed = it },
                             valueRange = 1f..60f,
-                            steps = 5
+                            steps = 4
                         )
 
                         Spacer(modifier = Modifier.height(8.dp))
@@ -211,7 +221,7 @@ fun DemoDirectorScreen(
                                     contentDescription = null
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text(if (isPlaying) "Playing..." else "Play Scenario $selectedScenario")
+                                Text(if (isPlaying) "Playing..." else "Run Scenario $selectedScenario")
                             }
 
                             OutlinedButton(
@@ -235,8 +245,10 @@ fun DemoDirectorScreen(
             currentProgress?.let { prog ->
                 item {
                     Spacer(modifier = Modifier.height(12.dp))
-                    Surface(
-                        color = MaterialTheme.colorScheme.primaryContainer,
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        ),
                         shape = RoundedCornerShape(8.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -252,14 +264,14 @@ fun DemoDirectorScreen(
                             Spacer(modifier = Modifier.width(12.dp))
                             Column {
                                 Text(
-                                    text = "Executing Step ${prog.step_index} of ${prog.total_steps} (${prog.actor})",
+                                    text = "Step ${prog.step_index} of ${prog.total_steps} (${prog.actor})",
+                                    style = MaterialTheme.typography.labelMedium,
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 12.sp,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                                 Text(
                                     text = prog.description,
-                                    fontSize = 11.sp,
+                                    style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                             }
@@ -268,146 +280,94 @@ fun DemoDirectorScreen(
                 }
             }
 
-            // C1 Baseline Keyword vs Aegis Risk Engine Comparison Card
+            // C1 Baseline Keyword Comparison Panel
             item {
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(24.dp))
                 Text(
-                    text = "C1: Keyword Filter vs Aegis Behavioral Engine",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    text = "Engine vs Legacy Filter (Comparator C1)",
+                    style = MaterialTheme.typography.titleMedium
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Side-by-side evaluation of subtle harassment patterns.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(10.dp))
 
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                    ),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            // Keyword Baseline Side
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = "KEYWORD FILTER (C1)",
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = "0 / 80 Flagged",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF2E7D32)
-                                )
-                                Text(
-                                    text = "All messages were polite: \"Are you free?\", \"Hope you're well!\"",
-                                    fontSize = 11.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-
-                            VerticalDivider(
-                                modifier = Modifier
-                                    .height(90.dp)
-                                    .padding(horizontal = 12.dp)
-                            )
-
-                            // Aegis Engine Side
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = "AEGIS RISK ENGINE",
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.error
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = "TIER HIGH (Score: 84)",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.error
-                                )
-                                Text(
-                                    text = "Flagged: 80 msgs in 3h, 0 replies, persistent after block.",
-                                    fontSize = 11.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(14.dp))
-                        Surface(
-                            color = MaterialTheme.colorScheme.surfaceVariant,
-                            shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(
-                                text = "Insight: Simple keyword filters fail completely on polite stalking. Aegis analyzes conversation frequency, reciprocity, and post-block persistence to stop harassment before physical harm occurs.",
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.padding(10.dp)
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Raw Verdict JSON Viewer
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Inspect Engine JSON Verdict",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Switch(
-                        checked = showRawJson,
-                        onCheckedChange = { showRawJson = it }
-                    )
-                }
-
-                AnimatedVisibility(visible = showRawJson) {
-                    Surface(
-                        color = Color.Black.copy(alpha = 0.85f),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp)
-                    ) {
-                        Text(
-                            text = """
-                                {
-                                  "target_user_id": "rohan",
-                                  "harassment_score": 84.2,
-                                  "risk_tier": "high",
-                                  "shap_reasons": [
-                                    "80 messages in 3 hours, 0 replies",
-                                    "Contact persisted after user block"
-                                  ],
-                                  "signals": {
-                                    "text_toxicity": 0.08,
-                                    "frequency_zscore": 4.82,
-                                    "post_block_recidivism": 1.0
-                                  },
-                                  "recommended_action": "throttle"
+                            // Legacy Keyword Card
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Column(modifier = Modifier.padding(12.dp)) {
+                                    Text(
+                                        text = "KEYWORD FILTER",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.outline
+                                    )
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    Text(
+                                        text = "0 Flags",
+                                        style = MaterialTheme.typography.headlineMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.outline
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = "Missed polite harassment. No bad words detected.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
                                 }
-                            """.trimIndent(),
-                            fontFamily = FontFamily.Monospace,
-                            fontSize = 11.sp,
-                            color = Color(0xFF81C784),
-                            modifier = Modifier.padding(12.dp)
-                        )
+                            }
+
+                            // Aegis Engine Card
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = SafetyTheme.highRiskContainer,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Column(modifier = Modifier.padding(12.dp)) {
+                                    Text(
+                                        text = "AEGIS AI ENGINE",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = SafetyTheme.highRisk
+                                    )
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    Text(
+                                        text = "88/100",
+                                        style = MaterialTheme.typography.headlineMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = SafetyTheme.highRisk
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = "Escalated to HIGH. Velocity & 0-reply pattern flagged.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = SafetyTheme.onHighRiskContainer
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
-                Spacer(modifier = Modifier.height(32.dp))
+
+                Spacer(modifier = Modifier.height(24.dp))
             }
         }
     }

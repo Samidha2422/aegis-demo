@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -26,11 +27,12 @@ fun MainNavigation() {
     val backStack = rememberNavBackStack(ChatsListKey)
     val currentKey = backStack.lastOrNull() ?: ChatsListKey
 
-    val showBottomBar = currentKey !is ChatDetailKey && currentKey !is PersonaPickerKey
+    // Only show bottom navigation on the 4 primary root tabs
+    val isPrimaryTab = currentKey is ChatsListKey || currentKey is FeedKey || currentKey is CallsKey || currentKey is SafetyCenterKey
 
     Scaffold(
         bottomBar = {
-            if (showBottomBar) {
+            if (isPrimaryTab) {
                 NavigationBar {
                     NavigationBarItem(
                         selected = currentKey is ChatsListKey,
@@ -40,7 +42,12 @@ fun MainNavigation() {
                                 backStack.add(ChatsListKey)
                             }
                         },
-                        icon = { Icon(Icons.Default.Chat, contentDescription = "Chats") },
+                        icon = {
+                            Icon(
+                                imageVector = if (currentKey is ChatsListKey) Icons.Filled.ChatBubble else Icons.Outlined.ChatBubbleOutline,
+                                contentDescription = "Chats"
+                            )
+                        },
                         label = { Text("Chats") }
                     )
                     NavigationBarItem(
@@ -51,7 +58,12 @@ fun MainNavigation() {
                                 backStack.add(FeedKey)
                             }
                         },
-                        icon = { Icon(Icons.Default.DynamicFeed, contentDescription = "Feed") },
+                        icon = {
+                            Icon(
+                                imageVector = if (currentKey is FeedKey) Icons.Filled.DynamicFeed else Icons.Outlined.DynamicFeed,
+                                contentDescription = "Feed"
+                            )
+                        },
                         label = { Text("Feed") }
                     )
                     NavigationBarItem(
@@ -62,7 +74,12 @@ fun MainNavigation() {
                                 backStack.add(CallsKey)
                             }
                         },
-                        icon = { Icon(Icons.Default.Phone, contentDescription = "Calls") },
+                        icon = {
+                            Icon(
+                                imageVector = if (currentKey is CallsKey) Icons.Filled.PhoneCallback else Icons.Outlined.PhoneCallback,
+                                contentDescription = "Calls"
+                            )
+                        },
                         label = { Text("Calls") }
                     )
                     NavigationBarItem(
@@ -73,30 +90,13 @@ fun MainNavigation() {
                                 backStack.add(SafetyCenterKey)
                             }
                         },
-                        icon = { Icon(Icons.Default.Shield, contentDescription = "Safety") },
+                        icon = {
+                            Icon(
+                                imageVector = if (currentKey is SafetyCenterKey) Icons.Filled.Shield else Icons.Outlined.Shield,
+                                contentDescription = "Safety"
+                            )
+                        },
                         label = { Text("Safety") }
-                    )
-                    NavigationBarItem(
-                        selected = currentKey is DemoDirectorKey,
-                        onClick = {
-                            if (currentKey !is DemoDirectorKey) {
-                                backStack.clear()
-                                backStack.add(DemoDirectorKey)
-                            }
-                        },
-                        icon = { Icon(Icons.Default.PlayCircle, contentDescription = "Director") },
-                        label = { Text("Director") }
-                    )
-                    NavigationBarItem(
-                        selected = currentKey is SettingsKey,
-                        onClick = {
-                            if (currentKey !is SettingsKey) {
-                                backStack.clear()
-                                backStack.add(SettingsKey)
-                            }
-                        },
-                        icon = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
-                        label = { Text("Settings") }
                     )
                 }
             }
@@ -119,7 +119,9 @@ fun MainNavigation() {
                     entry<ChatsListKey> {
                         ChatsListScreen(
                             onSelectChat = { id -> backStack.add(ChatDetailKey(id)) },
-                            onOpenPersonaPicker = { backStack.add(PersonaPickerKey) }
+                            onOpenPersonaPicker = { backStack.add(PersonaPickerKey) },
+                            onOpenDirector = { backStack.add(DemoDirectorKey) },
+                            onOpenSettings = { backStack.add(SettingsKey) }
                         )
                     }
                     entry<ChatDetailKey> { key ->
@@ -130,16 +132,22 @@ fun MainNavigation() {
                         )
                     }
                     entry<FeedKey> {
-                        FeedScreen()
+                        FeedScreen(
+                            onOpenDirector = { backStack.add(DemoDirectorKey) }
+                        )
                     }
                     entry<CallsKey> {
-                        CallsScreen()
+                        CallsScreen(
+                            onOpenSafetyCenter = { backStack.add(SafetyCenterKey) }
+                        )
                     }
                     entry<SafetyCenterKey> {
                         SafetyCenterScreen()
                     }
                     entry<DemoDirectorKey> {
-                        DemoDirectorScreen()
+                        DemoDirectorScreen(
+                            onBack = { backStack.removeLastOrNull() }
+                        )
                     }
                     entry<PersonaPickerKey> {
                         PersonaPickerScreen(
@@ -147,7 +155,9 @@ fun MainNavigation() {
                         )
                     }
                     entry<SettingsKey> {
-                        SettingsScreen()
+                        SettingsScreen(
+                            onBack = { backStack.removeLastOrNull() }
+                        )
                     }
                 }
             )
