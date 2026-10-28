@@ -1,249 +1,95 @@
-package com.aegis.demo.ui.settings
+﻿package com.aegis.demo.ui.settings
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.aegis.demo.data.model.EngineStatus
 import com.aegis.demo.di.ServiceLocator
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(
-    onBack: () -> Unit = {},
-    modifier: Modifier = Modifier
-) {
-    val repository = remember { ServiceLocator.getRepository() }
-    val scope = rememberCoroutineScope()
-
+fun SettingsScreen(onBack: () -> Unit = {}, modifier: Modifier = Modifier) {
+    val repository by ServiceLocator.repository.collectAsState()
     val currentUrl by ServiceLocator.baseUrl.collectAsState()
-    val isReplayMode by ServiceLocator.isReplayMode.collectAsState()
-
+    val replay by ServiceLocator.isReplayMode.collectAsState()
+    val scope = rememberCoroutineScope()
     var inputUrl by remember(currentUrl) { mutableStateOf(currentUrl) }
+    var urlError by remember { mutableStateOf(false) }
+    var status by remember(repository) { mutableStateOf<EngineStatus?>(null) }
+    var error by remember(repository) { mutableStateOf<String?>(null) }
+    var checking by remember { mutableStateOf(false) }
     var resetStatus by remember { mutableStateOf<String?>(null) }
+
+    suspend fun checkConnection() {
+        checking = true
+        error = null
+        status = null
+        try {
+            status = repository.getEngineStatus()
+        } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
+            error = "Engine status unavailable. Check the chat server's engine URL and API key."
+        } finally { checking = false }
+    }
+    LaunchedEffect(repository) { checkConnection() }
 
     Scaffold(
         topBar = {
-            Column {
-                TopAppBar(
-                    title = {
-                        Column {
-                            Text(
-                                text = "Settings",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = "Network & Environment Configuration",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.surface,
-                        titleContentColor = MaterialTheme.colorScheme.onSurface
-                    ),
-                    navigationIcon = {
-                        IconButton(onClick = onBack) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back"
-                            )
-                        }
-                    }
-                )
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
-            }
+            TopAppBar(title = { Text("Settings") }, navigationIcon = {
+                IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") }
+            })
         },
-        containerColor = MaterialTheme.colorScheme.background,
         modifier = modifier.fillMaxSize()
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 16.dp)
-                .verticalScroll(rememberScrollState())
-        ) {
-            // Replay Mode Switch
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 12.dp),
-                shape = RoundedCornerShape(10.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Offline Replay Mode",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = "Run full demo with 0 servers using bundled fixtures.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.outline
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Switch(
-                            checked = isReplayMode,
-                            onCheckedChange = { ServiceLocator.setReplayMode(it) }
-                        )
-                    }
-                }
+    ) { padding ->
+        Column(Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text("Offline replay (SIMULATED)", modifier = Modifier.weight(1f))
+                Switch(checked = replay, onCheckedChange = ServiceLocator::setReplayMode)
             }
-
-            // Backend URL Config
-            Text(
-                text = "Backend Connection",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-
             OutlinedTextField(
-                value = inputUrl,
-                onValueChange = { inputUrl = it },
-                label = { Text("Chat Server Base URL") },
-                placeholder = { Text("http://localhost:8080") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
+                value = inputUrl, onValueChange = { inputUrl = it; urlError = false },
+                label = { Text("Chat server URL") }, singleLine = true,
+                isError = urlError, modifier = Modifier.fillMaxWidth(),
+                supportingText = { if (urlError) Text("Enter an HTTP or HTTPS URL without credentials or query parameters.") }
             )
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            Button(
-                onClick = {
-                    ServiceLocator.setBaseUrl(inputUrl)
-                },
-                modifier = Modifier.align(Alignment.End),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp)
-            ) {
-                Icon(imageVector = Icons.Default.Save, contentDescription = null, modifier = Modifier.size(16.dp))
-                Spacer(modifier = Modifier.width(6.dp))
-                Text("Save Server URL", style = MaterialTheme.typography.labelSmall)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = { urlError = !ServiceLocator.setBaseUrl(inputUrl) }) { Text("Save") }
+                OutlinedButton(enabled = !checking, onClick = { scope.launch { checkConnection() } }) { Text(if (checking) "Checking…" else "Check connection") }
             }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // State Reset Section
-            Text(
-                text = "Demo Maintenance",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(10.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "Reset Demo State",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.SemiBold
+            error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            status?.let { engine ->
+                Text(if (replay) "SIMULATED: bundled fixtures" else if (engine.health.mock) "SIMULATED: engine mock mode" else "Engine connected", style = MaterialTheme.typography.titleMedium)
+                engine.health.degraded.forEach { Text(it, style = MaterialTheme.typography.bodyMedium) }
+                engine.models.forEach { model ->
+                    ListItem(
+                        headlineContent = { Text(model.name) },
+                        supportingContent = { Text(buildString {
+                            append(model.backend)
+                            model.version?.let { append(" · ").append(it) }
+                            if (model.degraded.isNotEmpty()) append("\n").append(model.degraded.joinToString("\n"))
+                        }) }
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "Flushes local in-memory message history, resets blocklists, and reloads clean scenario fixtures.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.outline
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    OutlinedButton(
-                        onClick = {
-                            scope.launch {
-                                repository.resetDemo()
-                                resetStatus = "Demo state reset successfully."
-                            }
-                        },
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-                    ) {
-                        Icon(imageVector = Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Reset Demo State", style = MaterialTheme.typography.labelSmall)
-                    }
-
-                    resetStatus?.let { status ->
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = status,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
                 }
+                if (!replay && engine.models.isEmpty()) Text("No model backends reported")
             }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Academic & Synthetic Honesty Disclosure
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                shape = RoundedCornerShape(10.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.Top
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Info,
-                        contentDescription = "Transparency",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text(
-                            text = "Synthetic Data & Privacy Policy",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "All personas (Meera, Rohan, Stranger 77), voice notes, images, and phone call logs are 100% synthetic for the Hacksploit 2026 showcase. The app does not access external personal communications or private phone records.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+            HorizontalDivider()
+            OutlinedButton(onClick = {
+                scope.launch {
+                    repository.resetDemo()
+                    resetStatus = "Chat state reset requested. Engine history is managed separately."
                 }
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
+            }) { Text("Reset chat state") }
+            resetStatus?.let { Text(it) }
+            Text("Replay uses fictional personas and synthetic assets. Live requests are analyzed by the host engine.", style = MaterialTheme.typography.bodyMedium)
+            Spacer(Modifier.height(16.dp))
         }
     }
 }

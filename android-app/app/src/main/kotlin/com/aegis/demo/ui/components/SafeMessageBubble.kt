@@ -216,7 +216,7 @@ fun SafeMessageBubble(
                                 ) {
                                     Icon(
                                         imageVector = Icons.Outlined.Image,
-                                        contentDescription = "Demo Image",
+                                        contentDescription = "Image not retained",
                                         tint = MaterialTheme.colorScheme.outline,
                                         modifier = Modifier.size(48.dp)
                                     )
@@ -229,7 +229,7 @@ fun SafeMessageBubble(
                                             .padding(8.dp)
                                     ) {
                                         Text(
-                                            text = "DEMO PROXY IMAGE",
+                                            text = if (message.media_url?.startsWith("assets/") == true) "DEMO PROXY IMAGE" else "Image analyzed; original not retained",
                                             style = MaterialTheme.typography.labelSmall,
                                             fontWeight = FontWeight.Bold,
                                             color = MaterialTheme.colorScheme.onSurface,
@@ -289,7 +289,7 @@ fun SafeMessageBubble(
                                     border = BorderStroke(0.5.dp, SafetyTheme.reviewRiskBorder)
                                 ) {
                                     Text(
-                                        text = "NSFW INFERENCE: CONNECTING (DEGRADED FALLBACK)",
+                                        text = safety.modules["image"]?.let { "${it.status} · ${it.backend}" } ?: if (safety.simulated) "SIMULATED" else "Image backend unavailable",
                                         style = MaterialTheme.typography.labelSmall,
                                         fontWeight = FontWeight.Bold,
                                         color = SafetyTheme.reviewRisk,

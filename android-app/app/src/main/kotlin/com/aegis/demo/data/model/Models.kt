@@ -64,7 +64,10 @@ data class SafetyObject(
     val recommended_action: String = "log",
     val state: String = "Delivered", // "Delivered", "Scanning", "Warned", "Blurred", "Hidden", "Held", "Escalated", "TranscriptOnly", "EngineUnavailable"
     val simulated: Boolean = false,
-    val tags: List<String> = emptyList()
+    val tags: List<String> = emptyList(),
+    val degraded: List<String> = emptyList(),
+    val model_versions: Map<String, String> = emptyMap(),
+    val modules: Map<String, EngineSignal> = emptyMap()
 )
 
 @Serializable
@@ -140,5 +143,23 @@ data class NudgeResult(
     val tier: String,
     val reasons: List<String>,
     val recommended_action: String,
-    val nudge_text: String? = null
+    val nudge_text: String? = null,
+    val simulated: Boolean = false,
+    val degraded: List<String> = emptyList(),
+    val available: Boolean = true
 )
+
+@Serializable
+data class EngineSignal(val score: Float, val label: String, val status: String, val backend: String, val confidence: Float)
+
+@Serializable
+data class EngineHealth(val status: String, val version: String, val mock: Boolean, val degraded: List<String>)
+
+@Serializable
+data class ModelHealth(val name: String, val version: String? = null, val hash_verified: Boolean, val backend: String, val degraded: List<String>)
+
+@Serializable
+data class EngineStatus(val health: EngineHealth, val models: List<ModelHealth>)
+
+@Serializable
+data class LoginResult(val token: String, val persona: Persona)

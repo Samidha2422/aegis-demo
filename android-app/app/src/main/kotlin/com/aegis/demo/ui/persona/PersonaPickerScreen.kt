@@ -104,7 +104,7 @@ fun PersonaPickerScreen(
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = if (isReplayMode) "Active: Bundled client fixtures (0 servers)" else "Live: Connected to local Rust server & engine",
+                                text = if (isReplayMode) "Active: Bundled client fixtures (0 servers)" else "Live: using configured chat server",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.outline
                             )

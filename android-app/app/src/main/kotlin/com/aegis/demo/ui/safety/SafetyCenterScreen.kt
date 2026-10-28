@@ -33,6 +33,11 @@ fun SafetyCenterScreen(
 ) {
     val repository = remember { ServiceLocator.getRepository() }
     val scope = rememberCoroutineScope()
+    val chats by repository.getChats().collectAsState(initial = emptyList())
+    val calls by repository.getCalls().collectAsState(initial = emptyList())
+    val posts by repository.getPosts().collectAsState(initial = emptyList())
+    val assessments = calls.map { it.safety } + posts.flatMap { it.comments }.map { it.safety }
+    val maxTier = chats.maxByOrNull { when (it.max_tier) { "urgent" -> 4; "high" -> 3; "review" -> 2; "low" -> 1; else -> 0 } }?.max_tier ?: "unknown"
 
     var exportResult by remember { mutableStateOf<String?>(null) }
     var isExporting by remember { mutableStateOf(false) }
@@ -118,7 +123,7 @@ fun SafetyCenterScreen(
                                     fontWeight = FontWeight.SemiBold
                                 )
                                 Text(
-                                    text = "Multimodal relational correlation engine active",
+                                    text = if (repository.isReplayMode()) "SIMULATED: bundled fixtures" else "Recent assessments",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.outline
                                 )
@@ -128,8 +133,8 @@ fun SafetyCenterScreen(
                         Spacer(modifier = Modifier.height(16.dp))
 
                         SeverityMeter(
-                            severity = 88f,
-                            tier = "high"
+                            severity = assessments.maxOfOrNull { it.severity } ?: 0f,
+                            tier = maxTier
                         )
                     }
                 }
@@ -148,8 +153,8 @@ fun SafetyCenterScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    MetricCard(title = "Polite Volume", value = "80 DMs", subtitle = "Throttled (0 replies)", modifier = Modifier.weight(1f))
-                    MetricCard(title = "Sensitive Media", value = "1 Image", subtitle = "Shielded & blurred", modifier = Modifier.weight(1f))
+                    MetricCard(title = "Messages", value = "${chats.sumOf { it.unread_count + it.held_count }}", subtitle = "In chat memory", modifier = Modifier.weight(1f))
+                    MetricCard(title = "Held", value = "${chats.sumOf { it.held_count }}", subtitle = "In chat memory", modifier = Modifier.weight(1f))
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
@@ -158,8 +163,8 @@ fun SafetyCenterScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    MetricCard(title = "Public Dogpiling", value = "24 Posts", subtitle = "Cluster quarantined", modifier = Modifier.weight(1f))
-                    MetricCard(title = "Quiet-Hour Calls", value = "40 Calls", subtitle = "Night spikes blocked", modifier = Modifier.weight(1f))
+                    MetricCard(title = "Comments", value = "${posts.sumOf { it.comments_count }}", subtitle = "In chat memory", modifier = Modifier.weight(1f))
+                    MetricCard(title = "Calls", value = "${calls.size}", subtitle = "In chat memory", modifier = Modifier.weight(1f))
                 }
             }
 

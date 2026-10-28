@@ -13,6 +13,7 @@ import com.aegis.demo.ui.theme.AegisDemoTheme
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
+    com.aegis.demo.di.ServiceLocator.initialize(this)
 
     enableEdgeToEdge()
     setContent {

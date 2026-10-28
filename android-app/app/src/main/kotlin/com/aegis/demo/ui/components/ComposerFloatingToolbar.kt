@@ -120,7 +120,7 @@ fun ComposerFloatingToolbar(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "PRE-SEND SAFETY NUDGE",
+                            text = if (nudgeResult?.available == false) "Safety check unavailable" else if (nudgeResult?.simulated == true) "SIMULATED safety nudge" else "Safety nudge",
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
                             color = SafetyTheme.reviewRisk

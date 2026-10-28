@@ -274,7 +274,7 @@ class FixtureRepository : ChatRepository {
         return Result.success(msg)
     }
 
-    override suspend fun checkNudge(draft: String): NudgeResult {
+    override suspend fun checkNudge(draft: String, chatId: String): NudgeResult {
         val lower = draft.lowercase()
         val isAbusive = lower.contains("idiot") || lower.contains("pathetic") || lower.contains("hate you")
         return if (isAbusive) {

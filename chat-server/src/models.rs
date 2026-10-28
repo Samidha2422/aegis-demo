@@ -65,6 +65,12 @@ pub struct SafetyObject {
     pub state: String, // "Delivered", "Scanning", "Warned", "Blurred", "Hidden", "Held", "Escalated", "TranscriptOnly", "EngineUnavailable"
     pub simulated: bool,
     pub tags: Vec<String>,
+    #[serde(default)]
+    pub degraded: Vec<String>,
+    #[serde(default)]
+    pub model_versions: HashMap<String, String>,
+    #[serde(default)]
+    pub modules: HashMap<String, EngineSignal>,
 }
 
 impl Default for SafetyObject {
@@ -78,17 +84,40 @@ impl Default for SafetyObject {
             state: "Delivered".to_string(),
             simulated: false,
             tags: Vec::new(),
+            degraded: Vec::new(),
+            model_versions: HashMap::new(),
+            modules: HashMap::new(),
         }
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct EngineVerdict {
     pub severity: f32,
     pub tier: String,
     pub reasons: Vec<String>,
     pub signals: HashMap<String, f32>,
     pub recommended_action: String,
+    pub simulated: bool,
+    pub degraded: Vec<String>,
+    pub model_versions: HashMap<String, String>,
+    pub modules: HashMap<String, EngineSignal>,
+    pub nudge: Option<EngineNudge>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EngineSignal {
+    pub score: f32,
+    pub label: String,
+    pub status: String,
+    pub backend: String,
+    pub confidence: f32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EngineNudge {
+    pub text: String,
+    pub rewrite_hint: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -99,21 +128,77 @@ pub struct EngineEventEnvelope {
     pub sender_id: String,
     pub recipient_id: String,
     pub platform: String,
-    pub channel: String,
+    pub draft: bool,
+    pub channel: EngineChannel,
     pub context: EventContext,
-    pub content: HashMap<String, serde_json::Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub message: Option<EngineMessage>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub media: Option<EngineMedia>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub call: Option<EngineCall>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EngineChannel {
+    #[serde(rename = "type")]
+    pub kind: String,
+    pub conversation_id: String,
+    pub post_id: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EngineMessage {
+    pub text: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EngineMedia {
+    pub mime: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EngineCall {
+    pub direction: String,
+    pub duration_s: u32,
+    pub answered: bool,
+    pub voicemail: bool,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct EventContext {
     pub is_contact: bool,
     pub recipient_blocked_sender: bool,
+    pub recipient_muted_sender: bool,
     pub stop_requested: bool,
     pub sender_account_age_days: i32,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reply_to_event_id: Option<String>,
     #[serde(default)]
     pub mentions: Vec<String>,
+}
+
+impl EngineEventEnvelope {
+    pub fn message(sender: &str, recipient: &str, conversation: &str, text: &str) -> Self {
+        Self {
+            event_id: uuid::Uuid::new_v4().to_string(),
+            kind: "message".into(),
+            occurred_at: Utc::now(),
+            draft: false,
+            sender_id: sender.into(),
+            recipient_id: recipient.into(),
+            platform: "demo-chat".into(),
+            channel: EngineChannel {
+                kind: "dm".into(),
+                conversation_id: conversation.into(),
+                post_id: None,
+            },
+            context: EventContext::default(),
+            message: Some(EngineMessage { text: text.into() }),
+            media: None,
+            call: None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

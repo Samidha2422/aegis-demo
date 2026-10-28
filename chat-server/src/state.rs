@@ -1,6 +1,8 @@
 use crate::baseline_comparator::BaselineComparator;
 use crate::engine_client::EngineClient;
-use crate::models::{AlertItem, CallRecord, Persona, Post, SafeMessage, WsEvent};
+use crate::models::{
+    AlertItem, CallRecord, EngineEventEnvelope, Persona, Post, SafeMessage, WsEvent,
+};
 use crate::scenario_runner::ScenarioRunner;
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
@@ -10,8 +12,8 @@ use tokio::sync::{broadcast, RwLock};
 pub struct AppState {
     pub personas: Arc<RwLock<Vec<Persona>>>,
     pub chats: Arc<RwLock<HashMap<String, Vec<SafeMessage>>>>,
-    pub blocked_users: Arc<RwLock<HashSet<String>>>,
-    pub muted_users: Arc<RwLock<HashSet<String>>>,
+    pub blocked_users: Arc<RwLock<HashSet<(String, String)>>>,
+    pub muted_users: Arc<RwLock<HashSet<(String, String)>>>,
     pub posts: Arc<RwLock<Vec<Post>>>,
     pub calls: Arc<RwLock<Vec<CallRecord>>>,
     pub alerts: Arc<RwLock<Vec<AlertItem>>>,
@@ -22,6 +24,44 @@ pub struct AppState {
 }
 
 impl AppState {
+    /// Build direction-aware context; Meera blocking Rohan never means Rohan blocked Meera.
+    pub async fn message_event(
+        &self,
+        sender: &str,
+        chat_id: &str,
+        text: &str,
+    ) -> Result<EngineEventEnvelope, axum::http::StatusCode> {
+        let peer = chat_id
+            .strip_prefix("chat_")
+            .ok_or(axum::http::StatusCode::UNPROCESSABLE_ENTITY)?;
+        let personas = self.personas.read().await;
+        let sender_persona = personas
+            .iter()
+            .find(|p| p.id == sender)
+            .ok_or(axum::http::StatusCode::UNPROCESSABLE_ENTITY)?;
+        let peer_persona = personas
+            .iter()
+            .find(|p| p.id == peer)
+            .ok_or(axum::http::StatusCode::NOT_FOUND)?;
+        if sender != "meera" && sender != peer {
+            return Err(axum::http::StatusCode::UNPROCESSABLE_ENTITY);
+        }
+        let recipient = if sender == "meera" { peer } else { "meera" };
+        let mut event = EngineEventEnvelope::message(sender, recipient, chat_id, text);
+        event.context.is_contact = if recipient == "meera" {
+            sender_persona.is_contact
+        } else {
+            peer_persona.is_contact
+        };
+        let refusal_pair = (recipient.to_owned(), sender.to_owned());
+        event.context.recipient_blocked_sender =
+            self.blocked_users.read().await.contains(&refusal_pair);
+        event.context.recipient_muted_sender =
+            self.muted_users.read().await.contains(&refusal_pair);
+        event.context.sender_account_age_days = 365;
+        Ok(event)
+    }
+
     pub fn new(engine_url: String) -> Self {
         let (tx, _) = broadcast::channel(100);
         let personas = vec![

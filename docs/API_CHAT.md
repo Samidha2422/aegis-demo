@@ -351,3 +351,48 @@ Reset database, active chats, stored media, and engine state back to a clean ini
 
 ### `GET /demo/baseline?conversation={id}`
 Returns comparison between simple keyword filter (0 flags) vs. Aegis Engine behavioral verdict (Review -> High) for Challenge C1.
+
+## Live engine contract (2026-10-29)
+
+This section supersedes provisional engine integration details. Base URL is
+http://localhost:8081 (Android emulator: http://10.0.2.2:8081). Android only calls
+chat-server. See RUNBOOK.md for host credentials, JDK/SDK setup and logged checks.
+
+- GET /engine/status returns health {status,version,mock,degraded} and models
+  [{name,version,hash_verified,backend,degraded}]. Hash verification is not inference.
+- POST /chats/{id}/messages accepts {text,sender_id?}; sender defaults to meera.
+  UUID message IDs are also engine idempotency IDs. In chat_rohan, sender rohan
+  targets meera; sender meera targets rohan. Other non-owner personas must match
+  the thread peer. The selected persona is explicit in requests, not global server state.
+- POST /nudge requires {draft,chat_id,sender_id?}. Response adds simulated and
+  degraded. Engine errors use HTTP 502/503 {error,detail}; no clean fallback score.
+- POST /chats/{id}/media accepts file, kind=image and optional sender_id. Maximum
+  image size is 10 MiB. PNG/JPEG/WebP MIME is derived from bytes. The actual image
+  bytes are sent to Adapt, then dropped. media_url=null; no proxy image is substituted.
+- SafetyObject adds degraded[], model_versions{} and modules{}; each module
+  contains score, label, status (built/simulated/roadmap), backend and confidence.
+  Numeric signals{} remains compatible. Unknown/unscored results use tier=unknown.
+- POST /users/{id}/block, unblock and mute forward actual engine refusal events;
+  failures are HTTP errors. POST /reports requires message_id and reason. A report
+  without an analyzed event ID returns 422; it is never silently accepted.
+- Comments use actual engine verdicts. Simulated call inputs remain labelled
+  simulated even when real Adapt scoring is used. GET /calls/log starts empty.
+- POST /calls/log/import accepts the UTF-8 safe-import CSV expected by Adapt and
+  returns its {atomic:false,rows:[{row,event_id,outcome,assessment?,problem?}]} body.
+  Row failures do not roll back previous successful rows. No caller-name scoring.
+- POST /recordings returns HTTP 501 with status=roadmap: uploaded audio bytes are
+  not supported by Adapt's current recording endpoint. No invented ASR result.
+- GET /evidence/export?format=json|html returns actual Adapt evidence for meera.
+  Non-2xx is an error, not an empty successful export. Drafts are absent from evidence.
+- POST /demo/reset clears chat memory only. Adapt history must be managed separately.
+  Existing scenario playback is a SIMULATED progress feed, not engine verification.
+
+### Refusal actor body and inbox view
+
+POST /users/{id}/block, unblock and mute accept optional {"actor_id":"rohan"}.
+Missing body or actor_id defaults to meera for existing clients. Invalid JSON,
+unknown actor or actor==target returns 422 with no refusal side effects. The target
+is the refused sender; the actor is the refusal recipient in Adapt. State is per
+(actor,target); unblocking does not remove a mute. Android always supplies its
+selected persona. GET /chats?actor_id=rohan returns chat_rohan with Meera as the
+participant; no query keeps the existing Meera inbox. Conversation IDs stay stable.

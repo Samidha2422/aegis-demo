@@ -104,3 +104,10 @@ In accordance with Section 7, only three custom UI composables are constructed, 
 - API Key entry.
 - Sensitivity threshold selector.
 - Judge mode toggle: "Show Raw Verdict JSON" in message sheets.
+
+### Live settings and error states (2026-10-29)
+Settings uses TopAppBar, OutlinedTextField (inline invalid-URL state), Switch,
+Button/OutlinedButton and ListItem for engine backend/degradation status. Engine
+credentials are server-side only. The initial live URL is http://10.0.2.2:8081/;
+Replay is an explicit SIMULATED choice. Navigation displays repository errors in
+Material Text; the reasons sheet shows actual module status/backend and degradation.

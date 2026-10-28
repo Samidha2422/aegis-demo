@@ -26,12 +26,15 @@ import com.aegis.demo.ui.settings.SettingsScreen
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun MainNavigation() {
+    val repository by com.aegis.demo.di.ServiceLocator.repository.collectAsState()
+    val connectionError by repository.getConnectionError().collectAsState(initial = null)
     val backStack = rememberNavBackStack(ChatsListKey)
     val currentKey = backStack.lastOrNull() ?: ChatsListKey
 
     // Only show bottom navigation on the 4 primary root tabs
     val isPrimaryTab = currentKey is ChatsListKey || currentKey is FeedKey || currentKey is CallsKey || currentKey is SafetyCenterKey
 
+    key(repository) {
     Scaffold(
         bottomBar = {
             if (isPrimaryTab) {
@@ -126,11 +129,12 @@ fun MainNavigation() {
         },
         modifier = Modifier.fillMaxSize()
     ) { paddingValues ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
+            connectionError?.let { Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(16.dp)) }
             NavDisplay(
                 backStack = backStack,
                 onBack = {
@@ -186,4 +190,5 @@ fun MainNavigation() {
             )
         }
     }
+}
 }

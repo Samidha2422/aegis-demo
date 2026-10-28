@@ -1,62 +1,102 @@
-# Aegis Operational Runbook & Fallback Procedures (RUNBOOK.md)
+# Live integration runbook
 
-This runbook outlines how to start the full system, connect the Android app to local servers, and handle any network or environment failures during live hackathon judging.
+Luna runs recipes and reads build-logs/<recipe>.log and .exit, reporting at most
+15 lines. Recipes do not download models or install a JDK.
 
----
+## Host configuration
 
-## 1. Standard Live Setup (`adb reverse`)
+Adapt defaults to 127.0.0.1:8080. Chat defaults to 0.0.0.0:8081 to avoid a
+collision. Start Adapt from its repository with its logged run recipe, with
+HRE_SALT (32+ bytes), HRE_API_KEYS and HRE_MODERATOR_TOKENS configured.
+Models and the engine database stay on the host.
 
-When presenting with a physical Android phone connected via USB:
+In the shell launching chat-server:
 
-1. **Start the Harassment Risk Engine:**
-   ```bash
-   # Engine runs on port 8000
-   cd ../harassment-risk-engine && cargo run --release
-   ```
-2. **Start the Chat Server:**
-   ```bash
-   just server-run
-   ```
-3. **Configure Port Forwarding over USB:**
-   ```bash
-   adb reverse tcp:8080 tcp:8080
-   adb reverse tcp:8000 tcp:8000
-   ```
-4. **Deploy & Launch Android App:**
-   ```bash
-   just app-install
-   just app-smoke
-   ```
-5. **Open Screen Mirror (Optional for Projectors):**
-   ```bash
-   android device hub
-   ```
+```powershell
+$env:AEGIS_ENGINE_URL = 'http://127.0.0.1:8080'
+$env:AEGIS_ENGINE_API_KEY = '<one entry from Adapt HRE_API_KEYS>'
+$env:PORT = '8081'
+just server-run
+```
 
----
+The key is required; no canned key is supplied. Restart chat after changing its
+environment. Android receives no engine credentials and never calls Adapt directly.
 
-## 2. Fallback Procedures
+## Android connection
 
-### Fallback A: USB Disconnected or Flaky (Wi-Fi Hotspot with LAN IPs)
-1. Turn on personal mobile hotspot on the laptop or phone.
-2. Connect both phone and laptop to the hotspot.
-3. Determine laptop's LAN IP: `ipconfig` (e.g., `192.168.43.120`).
-4. In the Aegis Android App, navigate to **Settings Screen**:
-   - Chat Server URL: `http://192.168.43.120:8080`
-   - Engine URL: `http://192.168.43.120:8000`
-5. Tap **Save & Reconnect**.
+The initial mode is live, using http://10.0.2.2:8081/ for the standard Android
+emulator. Settings persists the URL and explicit Replay choice. Saving a URL or
+changing mode replaces the active repository and closes the old WebSocket.
 
-### Fallback B: Engine Down or Crashed (Engine Fallback Mode)
-1. `chat-server` automatically detects engine connection dropouts via its circuit breaker.
-2. Outgoing and incoming messages continue to be delivered without dropping.
-3. Messages are tagged with `engine_unavailable`, and the app displays a subtle offline notice banner.
-4. Chat does not freeze or crash.
+For a USB phone, Luna runs just app-reverse; set the app URL to
+http://127.0.0.1:8081/. For Wi-Fi use http://<host-LAN-IP>:8081/ and allow the
+chat port through the host firewall. Only chat needs network exposure.
 
-### Fallback C: Total Network / Laptop Failure (Offline Replay Mode)
-1. Open the Aegis app on the phone.
-2. In the top app bar or inside **Demo Director**, toggle **Replay Mode** to `ON`.
-3. The app immediately swaps the network repository for `FixtureRepository`.
-4. All 9 scenarios can be played sequentially with realistic timers, safety chips, blur overlays, and bottom sheet signal breakdowns using local JSON fixtures embedded in the APK.
-5. **Zero network or laptop connection required.**
+Settings - Check connection shows engine mock status, backends, versions and
+degradation reasons. Hash verification does not imply inference. Missing models
+may use heuristics or report disabled backends; that behavior belongs to Adapt.
 
-### Fallback D: Hardware Failure (Backup Video)
-1. Keep a pre-recorded 3-minute screen capture of a perfect run stored in device gallery and on laptop desktop.
+## Build environment and delegated checks
+
+Wrappers resolve Cargo from PATH or the current user's .cargo/bin. Android SDK
+comes from ANDROID_HOME, ANDROID_SDK_ROOT or %LOCALAPPDATA%/Android/Sdk.
+They select an installed JDK 17, 21, or 25 containing javac, respecting
+AEGIS_JAVA_HOME first, then JAVA_HOME, Android Studio, RustRover and common vendor
+directories. Gradle 9.1 supports JDK 25. JRE 11 and JDK 27 are not selected. Set
+AEGIS_JAVA_HOME to override automatic discovery.
+
+```powershell
+$env:ANDROID_HOME = '<installed SDK directory>'
+$env:AEGIS_JAVA_HOME = '<installed JDK 17, 21, or 25 directory>'
+just server-format
+just server-check
+just app-test
+just app-build
+```
+
+Without a global just installation, use:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run-logged.ps1 -Recipe server-check
+```
+
+Substitute the recipe name. server-format formats code; server-check checks
+formatting, clippy on all targets, then tests, preserving the first failure.
+Scripts work from any working directory and write .exit on setup failure.
+
+With Adapt and chat running, Luna runs just integration-check. It compares a
+chat draft verdict to a direct Adapt draft verdict, checks unchanged chat history
+and engine evidence, then sends one benign committed message and requires module
+metadata. Use an idle development engine: the last request intentionally persists
+one event. The check does not reset or delete existing data.
+
+Then just app-install, just app-reverse (USB) and just app-smoke. Device review
+must cover text as Meera and Rohan in chat_rohan, draft errors, image analysis,
+block/unblock/mute, Settings status, URL changes, Replay to Live and engine outage.
+app-smoke launches the activity; visual review is still needed. scenario-check
+only validates YAML parsing, not detection scores.
+
+## Failure and privacy behavior
+
+Engine failure delivers text unscored with tier unknown, EngineUnavailable and
+an explicit reason. Blocked incoming text stays Held. Image failures return an error
+and never invent an image verdict. Draft failures show checks unavailable rather
+than a clean verdict. Network failures never switch Android to fixtures.
+
+Chat history is ephemeral in memory. Upload bytes are dropped after analysis; no
+original image URL or fabricated proxy is returned. Drafts write no chat history,
+alerts or broadcasts. Body logging is disabled. Evidence is generated by Adapt
+from its pseudonymized records. Resetting chat does not reset engine history.
+
+Replay remains explicitly SIMULATED and uses FixtureRepository. Scenario playback
+is a progress simulation, not evidence of detection. Recording upload is Roadmap/501:
+Adapt's current endpoint generates placeholder audio and does not accept recording
+bytes. CSV import forwards Adapt's safe-import contract and per-row outcomes;
+see Adapt/crates/hre-calls/src/safe_import.rs for exact CSV columns.
+
+Refusal actor verification: select Rohan, open chat_rohan (counterpart Meera),
+block/mute Meera, then send as Meera and check recipient_blocked_sender /
+recipient_muted_sender apply toward Rohan only. Unblock must leave mute intact.
+An empty-body refusal request remains a Meera action for backward compatibility.
+After this correction rerun server-format, server-check, app-test and app-build;
+earlier results predate the actor propagation change.

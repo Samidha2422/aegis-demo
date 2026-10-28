@@ -13,6 +13,15 @@ _ensure-logs:
 server-check: _ensure-logs
     @powershell.exe -ExecutionPolicy Bypass -File scripts/server-check.ps1
 
+server-format: _ensure-logs
+    @powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/run-logged.ps1 -Recipe server-format
+
+integration-check: _ensure-logs
+    @powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/run-logged.ps1 -Recipe integration-check
+
+app-reverse: _ensure-logs
+    @powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/run-logged.ps1 -Recipe app-reverse
+
 # Run chat-server in background or console
 server-run: _ensure-logs
     @powershell.exe -ExecutionPolicy Bypass -File scripts/server-run.ps1

@@ -88,39 +88,22 @@ pub async fn get_baseline_comparison(
 pub async fn export_evidence(
     State(state): State<AppState>,
     Query(query): Query<EvidenceQuery>,
-) -> impl IntoResponse {
-    let format = query.format.unwrap_or_else(|| "json".to_string());
-    let chats_map = state.chats.read().await;
-    let calls_list = state.calls.read().await;
-
-    let timestamp = Utc::now();
-    let export_payload = serde_json::json!({
-        "case_id": "AEGIS-CASE-2026-HACK",
-        "victim_id": "meera",
-        "generated_at": timestamp,
-        "integrity_hash": "sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-        "flagged_events_count": 85,
-        "chats": *chats_map,
-        "calls": *calls_list,
-        "summary": "Forensic timeline of persistent stalking and unreplied contact attempts."
-    });
-
-    if format == "html" {
-        let html_content = format!(
-            "<!DOCTYPE html><html><head><title>Aegis Evidence Report</title></head><body><h1>Aegis Safety Evidence Report</h1><p>Case: AEGIS-CASE-2026-HACK</p><p>Victim: Meera Patel</p><p>Generated: {}</p><hr><pre>{}</pre></body></html>",
-            timestamp,
-            serde_json::to_string_pretty(&export_payload).unwrap_or_default()
-        );
-        (
-            StatusCode::OK,
-            [("Content-Type", "text/html")],
-            html_content,
-        )
-    } else {
-        (
-            StatusCode::OK,
-            [("Content-Type", "application/json")],
-            serde_json::to_string_pretty(&export_payload).unwrap_or_default(),
-        )
+) -> Result<impl IntoResponse, crate::engine_client::EngineError> {
+    let format = query.format.unwrap_or_else(|| "json".into());
+    if !matches!(format.as_str(), "json" | "html") {
+        return Err(crate::engine_client::EngineError::Rejected(422));
     }
+    let html = format == "html";
+    let body = state.engine_client.export_evidence(html).await?;
+    Ok((
+        [(
+            "Content-Type",
+            if html {
+                "text/html"
+            } else {
+                "application/json"
+            },
+        )],
+        body,
+    ))
 }

@@ -42,7 +42,7 @@ fun ChatScreen(
     val scope = rememberCoroutineScope()
 
     val chats by repository.getChats().collectAsState(initial = emptyList())
-    val messages by repository.getMessages(chatId).collectAsState(initial = emptyList())
+    val messages by remember(repository, chatId) { repository.getMessages(chatId) }.collectAsState(initial = emptyList())
     val activePersona by repository.getActivePersona().collectAsState()
 
     val currentChat = chats.find { it.id == chatId } ?: ChatThread(
@@ -214,7 +214,7 @@ fun ChatScreen(
                     }
                 },
                 onCheckNudge = { draft ->
-                    repository.checkNudge(draft)
+                    repository.checkNudge(draft, chatId)
                 }
             )
         },

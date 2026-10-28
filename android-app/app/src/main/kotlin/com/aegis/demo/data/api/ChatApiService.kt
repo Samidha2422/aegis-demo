@@ -11,10 +11,13 @@ interface ChatApiService {
     suspend fun getPersonas(): List<Persona>
 
     @POST("auth/login")
-    suspend fun login(@Body body: Map<String, String>): Response<Map<String, String>>
+    suspend fun login(@Body body: Map<String, String>): LoginResult
+
+    @GET("engine/status")
+    suspend fun getEngineStatus(): EngineStatus
 
     @GET("chats")
-    suspend fun getChats(): List<ChatThread>
+    suspend fun getChats(@Query("actor_id") actorId: String = "meera"): List<ChatThread>
 
     @GET("chats/{id}/messages")
     suspend fun getMessages(@Path("id") id: String): List<SafeMessage>
@@ -27,17 +30,18 @@ interface ChatApiService {
     suspend fun uploadMedia(
         @Path("id") id: String,
         @Part file: MultipartBody.Part,
-        @Part("kind") kind: RequestBody
+        @Part("kind") kind: RequestBody,
+        @Part("sender_id") sender: RequestBody
     ): SafeMessage
 
     @POST("users/{id}/block")
-    suspend fun blockUser(@Path("id") id: String): Response<Unit>
+    suspend fun blockUser(@Path("id") id: String, @Body body: Map<String, String>): Response<Unit>
 
     @POST("users/{id}/unblock")
-    suspend fun unblockUser(@Path("id") id: String): Response<Unit>
+    suspend fun unblockUser(@Path("id") id: String, @Body body: Map<String, String>): Response<Unit>
 
     @POST("users/{id}/mute")
-    suspend fun muteUser(@Path("id") id: String): Response<Unit>
+    suspend fun muteUser(@Path("id") id: String, @Body body: Map<String, String>): Response<Unit>
 
     @POST("reports")
     suspend fun submitReport(@Body body: Map<String, String>): Response<Unit>
@@ -61,7 +65,7 @@ interface ChatApiService {
     suspend fun getBaseline(@Query("conversation") conversation: String): BaselineComparison
 
     @GET("evidence/export")
-    suspend fun exportEvidence(@Query("format") format: String): String
+    suspend fun exportEvidence(@Query("format") format: String): okhttp3.ResponseBody
 
     @POST("demo/scenarios/{n}/play")
     suspend fun playScenario(@Path("n") n: Int, @Query("speed") speed: Int): Response<Unit>

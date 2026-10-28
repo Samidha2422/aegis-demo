@@ -1,0 +1,2272 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Harassment Risk Engine",
+    "description": "",
+    "license": {
+      "name": "MIT",
+      "identifier": "MIT"
+    },
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/v1/admin/demo/reset": {
+      "post": {
+        "tags": [],
+        "operationId": "reset",
+        "responses": {
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "moderator": []
+          }
+        ]
+      }
+    },
+    "/v1/alerts": {
+      "get": {
+        "tags": [],
+        "operationId": "alert_list",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AnalyzeResponse"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "moderator": []
+          }
+        ]
+      }
+    },
+    "/v1/analyze": {
+      "post": {
+        "tags": [],
+        "operationId": "analyze",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalyzeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyzeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "api_key": []
+          },
+          {
+            "moderator": []
+          }
+        ]
+      }
+    },
+    "/v1/analyze/image": {
+      "post": {
+        "tags": [],
+        "operationId": "analyze_image",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/ImageUpload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyzeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "api_key": []
+          },
+          {
+            "moderator": []
+          }
+        ]
+      }
+    },
+    "/v1/calllogs/import": {
+      "post": {
+        "tags": [
+          "calls"
+        ],
+        "description": "Validates the entire CSV before analysis. Rows then run in file order through existing behavior/fusion rules with independent atomic event persistence. Import is not all-or-nothing: row failures do not roll back successful rows or stop later rows. Drafts write nothing. Call model and ASR remain unavailable.",
+        "operationId": "import_calls",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CallImportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CallImportResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "api_key": []
+          },
+          {
+            "moderator": []
+          }
+        ]
+      }
+    },
+    "/v1/events/refusal": {
+      "post": {
+        "tags": [],
+        "operationId": "refusal",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefusalRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "api_key": []
+          },
+          {
+            "moderator": []
+          }
+        ]
+      }
+    },
+    "/v1/evidence/export": {
+      "post": {
+        "tags": [],
+        "operationId": "export_evidence",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvidenceExportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvidenceExport"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "api_key": []
+          },
+          {
+            "moderator": []
+          }
+        ]
+      }
+    },
+    "/v1/evidence/verify": {
+      "post": {
+        "tags": [],
+        "operationId": "verify_evidence",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvidenceExport"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvidenceVerifyResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "api_key": []
+          },
+          {
+            "moderator": []
+          }
+        ]
+      }
+    },
+    "/v1/evidence/{id}/html": {
+      "get": {
+        "tags": [],
+        "operationId": "get_evidence_html",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Subject ID or pseudonym",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Printable HTML report",
+            "content": {
+              "text/html": {}
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "api_key": []
+          },
+          {
+            "moderator": []
+          }
+        ]
+      }
+    },
+    "/v1/health": {
+      "get": {
+        "tags": [],
+        "operationId": "health",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/health/models": {
+      "get": {
+        "tags": [],
+        "operationId": "health_models",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ModelHealth"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/jobs/{id}": {
+      "get": {
+        "tags": [],
+        "operationId": "get_job",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Job ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "api_key": []
+          },
+          {
+            "moderator": []
+          }
+        ]
+      }
+    },
+    "/v1/recordings/analyze": {
+      "post": {
+        "tags": [],
+        "operationId": "submit_recording",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordingAnalyzeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobSubmissionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "api_key": []
+          },
+          {
+            "moderator": []
+          }
+        ]
+      }
+    },
+    "/v1/reports": {
+      "post": {
+        "tags": [],
+        "operationId": "report",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "api_key": []
+          },
+          {
+            "moderator": []
+          }
+        ]
+      }
+    },
+    "/v1/slang/candidates": {
+      "get": {
+        "tags": [],
+        "operationId": "list_slang_candidates",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SlangCandidate"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "moderator": []
+          }
+        ]
+      }
+    },
+    "/v1/slang/candidates/{id}/confirm": {
+      "post": {
+        "tags": [],
+        "operationId": "confirm_slang_candidate",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Candidate ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SlangConfirmRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SlangTerm"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "moderator": []
+          }
+        ]
+      }
+    },
+    "/v1/slang/candidates/{id}/reject": {
+      "post": {
+        "tags": [],
+        "operationId": "reject_slang_candidate",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Candidate ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SlangCandidate"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "moderator": []
+          }
+        ]
+      }
+    },
+    "/v1/slang/retrain": {
+      "post": {
+        "tags": [],
+        "operationId": "retrain_slang",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SlangRetrainResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "moderator": []
+          }
+        ]
+      }
+    },
+    "/v1/slang/rollback": {
+      "post": {
+        "tags": [],
+        "operationId": "rollback_slang",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SlangRollbackResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "moderator": []
+          }
+        ]
+      }
+    },
+    "/v1/slang/terms": {
+      "post": {
+        "tags": [],
+        "operationId": "add_slang_term",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SlangAddTermRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SlangTerm"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "moderator": []
+          }
+        ]
+      }
+    },
+    "/v1/stream/alerts": {
+      "get": {
+        "tags": [],
+        "operationId": "stream_alerts",
+        "responses": {
+          "200": {
+            "description": "SSE alert and resync events",
+            "content": {
+              "text/event-stream": {}
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "moderator": []
+          }
+        ]
+      }
+    },
+    "/v1/subjects/{id}/feed-protection": {
+      "get": {
+        "tags": [],
+        "operationId": "feed_protection",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "HMAC subject ID",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedProtection"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "api_key": []
+          },
+          {
+            "moderator": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Action": {
+        "type": "string",
+        "enum": [
+          "log",
+          "warn_sender",
+          "blur_media",
+          "throttle",
+          "escalate"
+        ]
+      },
+      "AnalyzeRequest": {
+        "type": "object",
+        "description": "Client envelope. Raw identities must be pseudonymized before storage.",
+        "required": [
+          "event_id",
+          "kind",
+          "occurred_at",
+          "sender_id",
+          "recipient_id",
+          "platform",
+          "channel"
+        ],
+        "properties": {
+          "call": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Call"
+              }
+            ]
+          },
+          "channel": {
+            "$ref": "#/components/schemas/Channel"
+          },
+          "context": {
+            "$ref": "#/components/schemas/EventContext"
+          },
+          "draft": {
+            "type": "boolean"
+          },
+          "event_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/EventKind"
+          },
+          "media": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Media"
+              }
+            ]
+          },
+          "message": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Message"
+              }
+            ]
+          },
+          "occurred_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "platform": {
+            "type": "string"
+          },
+          "recipient_id": {
+            "type": "string"
+          },
+          "sender_id": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "AnalyzeResponse": {
+        "type": "object",
+        "required": [
+          "event_id",
+          "severity",
+          "tier",
+          "reasons",
+          "signals",
+          "recommended_action",
+          "secondary_actions",
+          "latency_ms",
+          "model_versions",
+          "simulated",
+          "degraded"
+        ],
+        "properties": {
+          "alert_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "degraded": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "event_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "latency_ms": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "model_versions": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "propertyNames": {
+              "type": "string"
+            }
+          },
+          "nudge": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Nudge"
+              }
+            ]
+          },
+          "reasons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Reason"
+            }
+          },
+          "recommended_action": {
+            "$ref": "#/components/schemas/Action"
+          },
+          "secondary_actions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SecondaryAction"
+            }
+          },
+          "severity": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 100,
+            "minimum": 0
+          },
+          "signals": {
+            "$ref": "#/components/schemas/Signals"
+          },
+          "simulated": {
+            "type": "boolean"
+          },
+          "tier": {
+            "$ref": "#/components/schemas/Tier"
+          }
+        }
+      },
+      "Backend": {
+        "type": "string",
+        "enum": [
+          "onnx",
+          "heuristic",
+          "disabled",
+          "ggml"
+        ]
+      },
+      "Call": {
+        "type": "object",
+        "required": [
+          "direction",
+          "duration_s",
+          "answered"
+        ],
+        "properties": {
+          "answered": {
+            "type": "boolean"
+          },
+          "direction": {
+            "$ref": "#/components/schemas/CallDirection"
+          },
+          "duration_s": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "voicemail": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CallDirection": {
+        "type": "string",
+        "enum": [
+          "incoming",
+          "outgoing"
+        ]
+      },
+      "CallImportRequest": {
+        "type": "object",
+        "required": [
+          "platform",
+          "conversation_id",
+          "csv"
+        ],
+        "properties": {
+          "conversation_id": {
+            "type": "string"
+          },
+          "csv": {
+            "type": "string",
+            "description": "UTF-8 CSV using hre-calls' nine required columns. Maximum two MiB."
+          },
+          "draft": {
+            "type": "boolean"
+          },
+          "platform": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CallImportResponse": {
+        "type": "object",
+        "required": [
+          "atomic",
+          "rows"
+        ],
+        "properties": {
+          "atomic": {
+            "type": "boolean",
+            "description": "Always false: each row commits independently after the whole CSV validates."
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CallImportRow"
+            }
+          }
+        }
+      },
+      "CallImportRow": {
+        "type": "object",
+        "required": [
+          "row",
+          "event_id",
+          "outcome"
+        ],
+        "properties": {
+          "assessment": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AnalyzeResponse"
+              }
+            ]
+          },
+          "event_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/RowOutcome"
+          },
+          "problem": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Problem"
+              }
+            ]
+          },
+          "row": {
+            "type": "integer",
+            "description": "One-based CSV line, counting the header as line one.",
+            "minimum": 0
+          }
+        }
+      },
+      "CallLogImportRequest": {
+        "type": "object",
+        "required": [
+          "csv_data"
+        ],
+        "properties": {
+          "csv_data": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CallLogImportResponse": {
+        "type": "object",
+        "required": [
+          "imported"
+        ],
+        "properties": {
+          "imported": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "CertificateDraft": {
+        "type": "object",
+        "required": [
+          "act_reference",
+          "part_a_statement",
+          "part_b_advisory",
+          "emergency_helplines"
+        ],
+        "properties": {
+          "act_reference": {
+            "type": "string"
+          },
+          "emergency_helplines": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "part_a_statement": {
+            "type": "string"
+          },
+          "part_b_advisory": {
+            "type": "string"
+          }
+        }
+      },
+      "Channel": {
+        "type": "object",
+        "required": [
+          "type",
+          "conversation_id"
+        ],
+        "properties": {
+          "conversation_id": {
+            "type": "string"
+          },
+          "group_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "post_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "type": {
+            "$ref": "#/components/schemas/ChannelType"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ChannelType": {
+        "type": "string",
+        "enum": [
+          "dm",
+          "group",
+          "comment",
+          "livestream",
+          "voice",
+          "call"
+        ]
+      },
+      "EventContext": {
+        "type": "object",
+        "properties": {
+          "is_contact": {
+            "type": "boolean",
+            "default": false
+          },
+          "language_hint": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "default": null
+          },
+          "mentions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": []
+          },
+          "recipient_blocked_sender": {
+            "type": "boolean",
+            "default": false
+          },
+          "recipient_is_minor": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "default": null
+          },
+          "recipient_muted_sender": {
+            "type": "boolean",
+            "default": false
+          },
+          "reply_to_event_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "default": null
+          },
+          "sender_account_age_days": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "default": null,
+            "minimum": 0
+          },
+          "stop_requested": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "additionalProperties": false
+      },
+      "EventKind": {
+        "type": "string",
+        "enum": [
+          "message",
+          "image",
+          "audio",
+          "call_event"
+        ]
+      },
+      "EvidenceExport": {
+        "type": "object",
+        "required": [
+          "export_id",
+          "subject_pseudonym",
+          "generated_at",
+          "record_count",
+          "records",
+          "manifest_hash",
+          "hmac_signature",
+          "certificate_draft"
+        ],
+        "properties": {
+          "certificate_draft": {
+            "$ref": "#/components/schemas/CertificateDraft"
+          },
+          "export_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "generated_at": {
+            "type": "string"
+          },
+          "hmac_signature": {
+            "type": "string"
+          },
+          "manifest_hash": {
+            "type": "string"
+          },
+          "record_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "records": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EvidenceRecord"
+            }
+          },
+          "subject_pseudonym": {
+            "type": "string"
+          }
+        }
+      },
+      "EvidenceExportRequest": {
+        "type": "object",
+        "required": [
+          "subject_id"
+        ],
+        "properties": {
+          "subject_id": {
+            "type": "string"
+          }
+        }
+      },
+      "EvidenceRecord": {
+        "type": "object",
+        "required": [
+          "record_id",
+          "event_id",
+          "timestamp_utc",
+          "timestamp_local",
+          "kind",
+          "sender_pseudonym",
+          "recipient_pseudonym",
+          "platform",
+          "summary",
+          "severity",
+          "tier",
+          "reasons",
+          "prev_hash",
+          "canonical_hash"
+        ],
+        "properties": {
+          "canonical_hash": {
+            "type": "string"
+          },
+          "event_id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "platform": {
+            "type": "string"
+          },
+          "prev_hash": {
+            "type": "string"
+          },
+          "reasons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Reason"
+            }
+          },
+          "recipient_pseudonym": {
+            "type": "string"
+          },
+          "record_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sender_pseudonym": {
+            "type": "string"
+          },
+          "severity": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "summary": {
+            "type": "string"
+          },
+          "tier": {
+            "type": "string"
+          },
+          "timestamp_local": {
+            "type": "string"
+          },
+          "timestamp_utc": {
+            "type": "string"
+          }
+        }
+      },
+      "EvidenceVerifyResponse": {
+        "type": "object",
+        "required": [
+          "valid"
+        ],
+        "properties": {
+          "valid": {
+            "type": "boolean"
+          }
+        }
+      },
+      "FeedProtection": {
+        "type": "object",
+        "required": [
+          "subject_id",
+          "enabled",
+          "actions"
+        ],
+        "properties": {
+          "actions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SecondaryAction"
+            }
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "subject_id": {
+            "type": "string"
+          }
+        }
+      },
+      "HealthResponse": {
+        "type": "object",
+        "required": [
+          "status",
+          "version",
+          "mock",
+          "degraded"
+        ],
+        "properties": {
+          "degraded": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "mock": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          }
+        }
+      },
+      "ImageUpload": {
+        "type": "object",
+        "description": "Multipart fields: `request` is an AnalyzeRequest JSON envelope; `image` is the file.",
+        "required": [
+          "request",
+          "image"
+        ],
+        "properties": {
+          "image": {
+            "type": "string",
+            "format": "binary"
+          },
+          "request": {
+            "type": "string"
+          }
+        }
+      },
+      "JobSubmissionResponse": {
+        "type": "object",
+        "required": [
+          "job_id",
+          "status"
+        ],
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string"
+          }
+        }
+      },
+      "Media": {
+        "type": "object",
+        "required": [
+          "mime"
+        ],
+        "properties": {
+          "caption": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "mime": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Message": {
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "properties": {
+          "text": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ModelHealth": {
+        "type": "object",
+        "description": "Model integrity is separate from runnable inference availability.",
+        "required": [
+          "name",
+          "hash_verified",
+          "backend",
+          "degraded"
+        ],
+        "properties": {
+          "backend": {
+            "$ref": "#/components/schemas/Backend"
+          },
+          "degraded": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "hash_verified": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          },
+          "version": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "Nudge": {
+        "type": "object",
+        "required": [
+          "text",
+          "rewrite_hint"
+        ],
+        "properties": {
+          "rewrite_hint": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          }
+        }
+      },
+      "Problem": {
+        "type": "object",
+        "required": [
+          "type",
+          "title",
+          "status",
+          "detail"
+        ],
+        "properties": {
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        }
+      },
+      "Reason": {
+        "type": "object",
+        "required": [
+          "code",
+          "text",
+          "weight",
+          "evidence"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "evidence": {
+            "type": "object",
+            "additionalProperties": {},
+            "propertyNames": {
+              "type": "string"
+            }
+          },
+          "text": {
+            "type": "string"
+          },
+          "weight": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "RecordingAnalyzeRequest": {
+        "type": "object",
+        "required": [
+          "mime"
+        ],
+        "properties": {
+          "caption": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "mime": {
+            "type": "string"
+          }
+        }
+      },
+      "RefusalKind": {
+        "type": "string",
+        "enum": [
+          "block",
+          "unblock",
+          "mute",
+          "stop_request"
+        ]
+      },
+      "RefusalRequest": {
+        "type": "object",
+        "required": [
+          "event_id",
+          "sender_id",
+          "recipient_id",
+          "occurred_at",
+          "kind",
+          "platform"
+        ],
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/RefusalKind"
+          },
+          "occurred_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "platform": {
+            "type": "string"
+          },
+          "recipient_id": {
+            "type": "string"
+          },
+          "sender_id": {
+            "type": "string"
+          }
+        }
+      },
+      "ReportRequest": {
+        "type": "object",
+        "required": [
+          "event_id",
+          "reason"
+        ],
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      },
+      "ReviewDecision": {
+        "type": "string",
+        "enum": [
+          "confirm",
+          "reject",
+          "escalate"
+        ]
+      },
+      "ReviewRequest": {
+        "type": "object",
+        "required": [
+          "decision"
+        ],
+        "properties": {
+          "decision": {
+            "$ref": "#/components/schemas/ReviewDecision"
+          },
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "RowOutcome": {
+        "type": "string",
+        "enum": [
+          "imported",
+          "cached",
+          "draft",
+          "failed"
+        ]
+      },
+      "SecondaryAction": {
+        "type": "string",
+        "enum": [
+          "alert_moderator",
+          "collapse_replies",
+          "rate_limit",
+          "needs_human_review",
+          "show_transcript"
+        ]
+      },
+      "Signal": {
+        "type": "object",
+        "required": [
+          "score",
+          "label",
+          "status",
+          "backend",
+          "confidence",
+          "details"
+        ],
+        "properties": {
+          "backend": {
+            "$ref": "#/components/schemas/Backend"
+          },
+          "confidence": {
+            "type": "number",
+            "format": "double",
+            "maximum": 1,
+            "minimum": 0
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": {},
+            "propertyNames": {
+              "type": "string"
+            }
+          },
+          "label": {
+            "type": "string"
+          },
+          "score": {
+            "type": "number",
+            "format": "double",
+            "maximum": 1,
+            "minimum": 0
+          },
+          "status": {
+            "$ref": "#/components/schemas/Status"
+          }
+        }
+      },
+      "Signals": {
+        "type": "object",
+        "required": [
+          "text",
+          "ocr",
+          "image",
+          "audio",
+          "call",
+          "behavior",
+          "pile_on",
+          "pii"
+        ],
+        "properties": {
+          "audio": {
+            "$ref": "#/components/schemas/Signal"
+          },
+          "behavior": {
+            "$ref": "#/components/schemas/Signal"
+          },
+          "call": {
+            "$ref": "#/components/schemas/Signal"
+          },
+          "image": {
+            "$ref": "#/components/schemas/Signal"
+          },
+          "ocr": {
+            "$ref": "#/components/schemas/Signal"
+          },
+          "pii": {
+            "$ref": "#/components/schemas/Signal"
+          },
+          "pile_on": {
+            "$ref": "#/components/schemas/Signal"
+          },
+          "text": {
+            "$ref": "#/components/schemas/Signal"
+          }
+        }
+      },
+      "SlangAddTermRequest": {
+        "type": "object",
+        "required": [
+          "term",
+          "meaning",
+          "severity"
+        ],
+        "properties": {
+          "meaning": {
+            "type": "string"
+          },
+          "severity": {
+            "type": "number",
+            "format": "double"
+          },
+          "term": {
+            "type": "string"
+          }
+        }
+      },
+      "SlangCandidate": {
+        "type": "object",
+        "required": [
+          "id",
+          "term",
+          "context_masked",
+          "sender_count",
+          "score",
+          "created_at"
+        ],
+        "properties": {
+          "context_masked": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "score": {
+            "type": "number",
+            "format": "double"
+          },
+          "sender_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "term": {
+            "type": "string"
+          }
+        }
+      },
+      "SlangConfirmRequest": {
+        "type": "object",
+        "required": [
+          "meaning",
+          "severity"
+        ],
+        "properties": {
+          "meaning": {
+            "type": "string"
+          },
+          "severity": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "SlangRetrainResponse": {
+        "type": "object",
+        "required": [
+          "version",
+          "val_precision"
+        ],
+        "properties": {
+          "val_precision": {
+            "type": "number",
+            "format": "double"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          }
+        }
+      },
+      "SlangRollbackResponse": {
+        "type": "object",
+        "required": [
+          "version"
+        ],
+        "properties": {
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          }
+        }
+      },
+      "SlangTerm": {
+        "type": "object",
+        "required": [
+          "term",
+          "meaning",
+          "severity",
+          "language",
+          "added_by",
+          "created_at",
+          "version"
+        ],
+        "properties": {
+          "added_by": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "language": {
+            "type": "string"
+          },
+          "meaning": {
+            "type": "string"
+          },
+          "severity": {
+            "type": "number",
+            "format": "double"
+          },
+          "term": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          }
+        }
+      },
+      "Status": {
+        "type": "string",
+        "enum": [
+          "built",
+          "simulated",
+          "roadmap"
+        ]
+      },
+      "Tier": {
+        "type": "string",
+        "enum": [
+          "low",
+          "review",
+          "high",
+          "urgent"
+        ]
+      }
+    },
+    "securitySchemes": {
+      "api_key": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      },
+      "moderator": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

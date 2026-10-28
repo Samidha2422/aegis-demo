@@ -4,7 +4,6 @@ use axum::{
 };
 use std::net::SocketAddr;
 use tower_http::cors::{Any, CorsLayer};
-use tower_http::trace::TraceLayer;
 use tracing::info;
 
 mod action_policy;
@@ -25,7 +24,7 @@ async fn main() -> anyhow::Result<()> {
         .init();
 
     let engine_url =
-        std::env::var("AEGIS_ENGINE_URL").unwrap_or_else(|_| "http://localhost:8000".to_string());
+        std::env::var("AEGIS_ENGINE_URL").unwrap_or_else(|_| "http://127.0.0.1:8080".to_string());
     let state = AppState::new(engine_url);
 
     let cors = CorsLayer::new()
@@ -34,6 +33,7 @@ async fn main() -> anyhow::Result<()> {
         .allow_headers(Any);
 
     let app = Router::new()
+        .route("/engine/status", get(handlers::moderation::engine_status))
         // Auth & Personas
         .route("/personas", get(handlers::auth::list_personas))
         .route("/auth/login", post(handlers::auth::login))
@@ -78,14 +78,16 @@ async fn main() -> anyhow::Result<()> {
         .route("/evidence/export", get(handlers::demo::export_evidence))
         // Realtime WebSocket
         .route("/ws", get(handlers::ws::ws_handler))
+        .layer(axum::extract::DefaultBodyLimit::max(
+            10 * 1024 * 1024 + 65536,
+        ))
         .layer(cors)
-        .layer(TraceLayer::new_for_http())
         .with_state(state);
 
     let port: u16 = std::env::var("PORT")
-        .unwrap_or_else(|_| "8080".to_string())
+        .unwrap_or_else(|_| "8081".to_string())
         .parse()
-        .unwrap_or(8080);
+        .unwrap_or(8081);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
     info!("Aegis Chat Server listening on {}", addr);

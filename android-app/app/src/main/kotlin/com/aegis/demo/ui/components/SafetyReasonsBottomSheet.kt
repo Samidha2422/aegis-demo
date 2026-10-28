@@ -55,7 +55,7 @@ fun SafetyReasonsBottomSheet(
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "SHAP feature contribution breakdown",
+                        text = if (safety.simulated) "SIMULATED" else safety.state,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -126,6 +126,11 @@ fun SafetyReasonsBottomSheet(
                         }
                     }
                 }
+            }
+
+            safety.degraded.forEach { Text(it, color = MaterialTheme.colorScheme.error) }
+            safety.modules.forEach { (name, signal) ->
+                Text("$name: ${signal.status} · ${signal.backend}", style = MaterialTheme.typography.bodyMedium)
             }
 
             // Engine Signals if present
