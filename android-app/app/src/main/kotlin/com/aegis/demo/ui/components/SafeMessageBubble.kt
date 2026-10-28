@@ -30,7 +30,9 @@ fun SafeMessageBubble(
     onInspectSafety: (SafeMessage) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var isBlurred by remember { mutableStateOf(message.safety.state == "Blurred") }
+    var isBlurred by remember(message.id, message.safety.state, message.safety.recommended_action) {
+        mutableStateOf(message.safety.state == "Blurred" || message.safety.recommended_action == "blur_media")
+    }
     var isHeldExpanded by remember { mutableStateOf(false) }
     var isVoicePlaying by remember { mutableStateOf(false) }
 
@@ -236,8 +238,68 @@ fun SafeMessageBubble(
                                     }
                                 }
                             }
-                            if (message.text.isNotEmpty()) {
+
+                            // Risk Reasons Breakdown for Image
+                            if (safety.reasons.isNotEmpty()) {
                                 Spacer(modifier = Modifier.height(8.dp))
+                                Surface(
+                                    shape = RoundedCornerShape(6.dp),
+                                    color = if (safety.severity >= 70f) SafetyTheme.highRiskContainer else MaterialTheme.colorScheme.surfaceVariant,
+                                    border = BorderStroke(1.dp, if (safety.severity >= 70f) SafetyTheme.highRiskBorder else MaterialTheme.colorScheme.outlineVariant),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Column(modifier = Modifier.padding(8.dp)) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(
+                                                imageVector = Icons.Default.Shield,
+                                                contentDescription = null,
+                                                tint = if (safety.severity >= 70f) SafetyTheme.highRisk else MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(14.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Text(
+                                                text = "RISK REASONS",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                fontWeight = FontWeight.Bold,
+                                                color = if (safety.severity >= 70f) SafetyTheme.highRisk else MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        safety.reasons.forEach { r ->
+                                            Text(
+                                                text = "• $r",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = if (safety.severity >= 70f) SafetyTheme.onHighRiskContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Simulation & Degradation Status
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Surface(
+                                    shape = RoundedCornerShape(4.dp),
+                                    color = SafetyTheme.reviewRiskContainer,
+                                    border = BorderStroke(0.5.dp, SafetyTheme.reviewRiskBorder)
+                                ) {
+                                    Text(
+                                        text = "NSFW INFERENCE: CONNECTING (DEGRADED FALLBACK)",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = SafetyTheme.reviewRisk,
+                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+
+                            if (message.text.isNotEmpty() && message.text != "demo_proxy_nsfw.jpg") {
+                                Spacer(modifier = Modifier.height(6.dp))
                                 Text(
                                     text = message.text,
                                     style = MaterialTheme.typography.bodyMedium,

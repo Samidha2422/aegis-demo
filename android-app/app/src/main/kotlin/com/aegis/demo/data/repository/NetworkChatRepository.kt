@@ -12,6 +12,8 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.jsonObject
 import okhttp3.*
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody.Companion.toRequestBody
 
 class NetworkChatRepository(
     private val apiService: ChatApiService,
@@ -170,6 +172,61 @@ class NetworkChatRepository(
             Result.success(msg)
         } catch (e: Exception) {
             Result.failure(e)
+        }
+    }
+
+    override suspend fun sendImage(chatId: String, imageBytes: ByteArray, filename: String): Result<SafeMessage> {
+        return try {
+            val reqBody = imageBytes.toRequestBody("image/*".toMediaTypeOrNull())
+            val part = MultipartBody.Part.createFormData("file", filename, reqBody)
+            val kindPart = "image".toRequestBody("text/plain".toMediaTypeOrNull())
+            val msg = apiService.uploadMedia(chatId, part, kindPart)
+            appendMessage(msg)
+            Result.success(msg)
+        } catch (e: Exception) {
+            val active = _activePersona.value
+            val isStranger = chatId.contains("stranger") || chatId.contains("unknown")
+            val fallbackMsg = SafeMessage(
+                id = "msg_img_" + java.util.UUID.randomUUID().toString().take(8),
+                chat_id = chatId,
+                sender_id = active?.id ?: "meera",
+                recipient_id = chatId.removePrefix("chat_"),
+                kind = "image",
+                text = filename,
+                media_url = "assets/proxy_nsfw.png",
+                timestamp = "Just now",
+                safety = if (isStranger) {
+                    SafetyObject(
+                        severity = 82f,
+                        tier = "high",
+                        reasons = listOf(
+                            "Unsolicited media from non-contact",
+                            "NSFW inference connecting (rule degradation active)"
+                        ),
+                        signals = mapOf("heuristic_risk" to 0.82f),
+                        recommended_action = "blur_media",
+                        state = "Blurred",
+                        simulated = true,
+                        tags = listOf("DEMO PROXY IMAGE", "SIMULATED SIGNAL", "DEGRADATION: RULE FALLBACK")
+                    )
+                } else {
+                    SafetyObject(
+                        severity = 12f,
+                        tier = "low",
+                        reasons = listOf(
+                            "Media shared with mutual contact",
+                            "NSFW inference connecting (clean heuristic)"
+                        ),
+                        signals = mapOf("heuristic_risk" to 0.12f),
+                        recommended_action = "log",
+                        state = "Delivered",
+                        simulated = true,
+                        tags = listOf("DEMO PROXY IMAGE", "SIMULATED")
+                    )
+                }
+            )
+            appendMessage(fallbackMsg)
+            Result.success(fallbackMsg)
         }
     }
 

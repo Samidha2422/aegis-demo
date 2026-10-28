@@ -1,11 +1,16 @@
 package com.aegis.demo.ui.components
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -13,12 +18,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -28,17 +36,32 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ComposerFloatingToolbar(
     onSendMessage: (String) -> Unit,
+    onSendImage: (ByteArray, String) -> Unit = { _, _ -> },
     onCheckNudge: suspend (String) -> NudgeResult,
     modifier: Modifier = Modifier
 ) {
     var text by remember { mutableStateOf("") }
     var nudgeResult by remember { mutableStateOf<NudgeResult?>(null) }
+    var showAttachMenu by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     var debounceJob by remember { mutableStateOf<Job?>(null) }
+    val context = LocalContext.current
+
+    val imagePicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            try {
+                val bytes = context.contentResolver.openInputStream(it)?.use { stream -> stream.readBytes() }
+                if (bytes != null && bytes.isNotEmpty()) {
+                    onSendImage(bytes, "photo_${System.currentTimeMillis()}.jpg")
+                }
+            } catch (_: Exception) {}
+        }
+    }
 
     fun handleTextChange(newText: String) {
         text = newText
@@ -81,7 +104,7 @@ fun ComposerFloatingToolbar(
                 colors = CardDefaults.cardColors(
                     containerColor = SafetyTheme.reviewRiskContainer
                 ),
-                border = androidx.compose.foundation.BorderStroke(1.dp, SafetyTheme.reviewRiskBorder),
+                border = BorderStroke(1.dp, SafetyTheme.reviewRiskBorder),
                 shape = RoundedCornerShape(10.dp),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -156,7 +179,7 @@ fun ComposerFloatingToolbar(
         Surface(
             shape = RoundedCornerShape(24.dp),
             color = MaterialTheme.colorScheme.surface,
-            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
             shadowElevation = 2.dp,
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -166,12 +189,38 @@ fun ComposerFloatingToolbar(
                     .padding(horizontal = 8.dp, vertical = 2.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = {}) {
-                    Icon(
-                        imageVector = Icons.Default.AttachFile,
-                        contentDescription = "Attach Media",
-                        tint = MaterialTheme.colorScheme.outline
-                    )
+                Box {
+                    IconButton(onClick = { showAttachMenu = true }) {
+                        Icon(
+                            imageVector = Icons.Default.AttachFile,
+                            contentDescription = "Attach Media",
+                            tint = MaterialTheme.colorScheme.outline
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = showAttachMenu,
+                        onDismissRequest = { showAttachMenu = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Choose from Gallery") },
+                            leadingIcon = { Icon(Icons.Default.PhotoLibrary, contentDescription = null) },
+                            onClick = {
+                                showAttachMenu = false
+                                imagePicker.launch("image/*")
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Send Demo Proxy Image (NSFW Test)") },
+                            leadingIcon = { Icon(Icons.Default.Image, contentDescription = null) },
+                            onClick = {
+                                showAttachMenu = false
+                                val dummyBytes = byteArrayOf(
+                                    0x89.toByte(), 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A
+                                )
+                                onSendImage(dummyBytes, "demo_proxy_nsfw.jpg")
+                            }
+                        )
+                    }
                 }
 
                 TextField(
@@ -201,7 +250,7 @@ fun ComposerFloatingToolbar(
                         onClick = { submit() }
                     ) {
                         Surface(
-                            shape = androidx.compose.foundation.shape.CircleShape,
+                            shape = CircleShape,
                             color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(36.dp)
                         ) {

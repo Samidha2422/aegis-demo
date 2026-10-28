@@ -1,4 +1,3 @@
-use crate::models::WsEvent;
 use crate::state::AppState;
 use axum::{
     extract::{

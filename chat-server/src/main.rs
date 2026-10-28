@@ -43,6 +43,7 @@ async fn main() -> anyhow::Result<()> {
             "/chats/:id/messages",
             get(handlers::chats::get_messages).post(handlers::chats::send_message),
         )
+        .route("/chats/:id/media", post(handlers::chats::upload_media))
         // Moderation & Nudge
         .route("/users/:id/block", post(handlers::moderation::block_user))
         .route(

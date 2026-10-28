@@ -208,6 +208,11 @@ fun ChatScreen(
                         repository.sendMessage(chatId, text)
                     }
                 },
+                onSendImage = { bytes, filename ->
+                    scope.launch {
+                        repository.sendImage(chatId, bytes, filename)
+                    }
+                },
                 onCheckNudge = { draft ->
                     repository.checkNudge(draft)
                 }
@@ -262,9 +267,14 @@ fun ChatScreen(
                             }
                         }
                         Spacer(modifier = Modifier.height(4.dp))
-                        LinearWavyProgressIndicator(
+                        LinearProgressIndicator(
                             progress = { 0.88f },
-                            modifier = Modifier.fillMaxWidth()
+                            color = SafetyTheme.highRisk,
+                            trackColor = SafetyTheme.highRiskContainer,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(6.dp)
+                                .clip(RoundedCornerShape(3.dp))
                         )
                     }
                 }

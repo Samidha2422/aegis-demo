@@ -1,4 +1,3 @@
-use crate::models::SafetyObject;
 use crate::state::AppState;
 use axum::{
     extract::{Path, State},
@@ -7,6 +6,7 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 
+#[allow(dead_code)]
 #[derive(Deserialize)]
 pub struct ReportRequest {
     pub message_id: Option<String>,

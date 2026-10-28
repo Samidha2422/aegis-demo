@@ -1,4 +1,4 @@
-use crate::models::{EngineEventEnvelope, EngineVerdict, EventContext};
+use crate::models::{EngineEventEnvelope, EngineVerdict};
 use reqwest::Client;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};

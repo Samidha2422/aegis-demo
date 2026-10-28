@@ -1,10 +1,8 @@
-use crate::models::{EngineEventEnvelope, EventContext, SafeMessage, SafetyObject, WsEvent};
-use chrono::{DateTime, Duration as ChronoDuration, Utc};
+use crate::models::WsEvent;
+use chrono::{Duration as ChronoDuration, Utc};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::sync::Arc;
 use tokio::sync::broadcast;
-use tracing::{error, info};
+use tracing::info;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ScenarioStep {

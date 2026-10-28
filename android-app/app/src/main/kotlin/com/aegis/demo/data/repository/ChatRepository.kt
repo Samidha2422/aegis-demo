@@ -12,6 +12,7 @@ interface ChatRepository {
     fun getChats(): Flow<List<ChatThread>>
     fun getMessages(chatId: String): Flow<List<SafeMessage>>
     suspend fun sendMessage(chatId: String, text: String): Result<SafeMessage>
+    suspend fun sendImage(chatId: String, imageBytes: ByteArray, filename: String = "image.jpg"): Result<SafeMessage>
 
     suspend fun checkNudge(draft: String): NudgeResult
     suspend fun blockUser(userId: String)

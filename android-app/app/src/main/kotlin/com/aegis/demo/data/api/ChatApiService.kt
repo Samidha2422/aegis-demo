@@ -1,6 +1,8 @@
 package com.aegis.demo.data.api
 
 import com.aegis.demo.data.model.*
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import retrofit2.Response
 import retrofit2.http.*
 
@@ -19,6 +21,14 @@ interface ChatApiService {
 
     @POST("chats/{id}/messages")
     suspend fun sendMessage(@Path("id") id: String, @Body body: Map<String, String>): SafeMessage
+
+    @Multipart
+    @POST("chats/{id}/media")
+    suspend fun uploadMedia(
+        @Path("id") id: String,
+        @Part file: MultipartBody.Part,
+        @Part("kind") kind: RequestBody
+    ): SafeMessage
 
     @POST("users/{id}/block")
     suspend fun blockUser(@Path("id") id: String): Response<Unit>

@@ -222,6 +222,58 @@ class FixtureRepository : ChatRepository {
         return Result.success(msg)
     }
 
+    override suspend fun sendImage(chatId: String, imageBytes: ByteArray, filename: String): Result<SafeMessage> {
+        val isStranger = chatId.contains("stranger") || chatId.contains("unknown")
+        val safety = if (isStranger) {
+            SafetyObject(
+                severity = 82f,
+                tier = "high",
+                reasons = listOf(
+                    "Unsolicited media from non-contact",
+                    "NSFW inference connecting (rule degradation active)"
+                ),
+                signals = mapOf("heuristic_risk" to 0.82f),
+                recommended_action = "blur_media",
+                state = "Blurred",
+                simulated = true,
+                tags = listOf("DEMO PROXY IMAGE", "SIMULATED SIGNAL", "DEGRADATION: RULE FALLBACK")
+            )
+        } else {
+            SafetyObject(
+                severity = 12f,
+                tier = "low",
+                reasons = listOf(
+                    "Media shared within active contact thread",
+                    "NSFW inference connecting (clean heuristic)"
+                ),
+                signals = mapOf("heuristic_risk" to 0.12f),
+                recommended_action = "log",
+                state = "Delivered",
+                simulated = true,
+                tags = listOf("DEMO PROXY IMAGE", "SIMULATED")
+            )
+        }
+
+        val msg = SafeMessage(
+            id = "msg_${UUID.randomUUID()}",
+            chat_id = chatId,
+            sender_id = _activePersona.value?.id ?: "meera",
+            recipient_id = chatId.removePrefix("chat_"),
+            kind = "image",
+            text = filename,
+            media_url = "assets/proxy_nsfw.png",
+            timestamp = "Just now",
+            safety = safety
+        )
+
+        val current = _messages.value.toMutableMap()
+        val list = (current[chatId] ?: emptyList()).toMutableList()
+        list.add(msg)
+        current[chatId] = list
+        _messages.value = current
+        return Result.success(msg)
+    }
+
     override suspend fun checkNudge(draft: String): NudgeResult {
         val lower = draft.lowercase()
         val isAbusive = lower.contains("idiot") || lower.contains("pathetic") || lower.contains("hate you")

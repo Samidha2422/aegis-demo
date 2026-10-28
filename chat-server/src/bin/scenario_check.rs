@@ -10,7 +10,10 @@ fn main() {
         match fs::read_to_string(&path) {
             Ok(content) => match serde_yaml::from_str::<serde_json::Value>(&content) {
                 Ok(val) => {
-                    let title = val.get("title").and_then(|t| t.as_str()).unwrap_or("Unknown");
+                    let title = val
+                        .get("title")
+                        .and_then(|t| t.as_str())
+                        .unwrap_or("Unknown");
                     let steps = val
                         .get("steps")
                         .and_then(|s| s.as_array())

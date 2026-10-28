@@ -162,3 +162,101 @@ pub async fn send_message(
 
     Ok(Json(msg))
 }
+
+pub async fn upload_media(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+    mut multipart: axum::extract::Multipart,
+) -> Result<Json<SafeMessage>, StatusCode> {
+    let mut file_name = "upload.jpg".to_string();
+    let mut kind = "image".to_string();
+
+    while let Ok(Some(field)) = multipart.next_field().await {
+        let name = field.name().unwrap_or("").to_string();
+        if name == "file" {
+            if let Some(fname) = field.file_name() {
+                file_name = fname.to_string();
+            }
+            let _ = field.bytes().await;
+        } else if name == "kind" {
+            if let Ok(text) = field.text().await {
+                kind = text;
+            }
+        }
+    }
+
+    let sender_id = "meera".to_string();
+    let recipient_id = id.strip_prefix("chat_").unwrap_or(&id).to_string();
+    let msg_id = format!("msg_{}", Uuid::new_v4().to_string().replace('-', ""));
+    let occurred_at = Utc::now();
+
+    let is_blocked = {
+        let blocked = state.blocked_users.read().await;
+        blocked.contains(&recipient_id)
+    };
+
+    let is_contact = !id.contains("stranger") && !id.contains("unknown");
+
+    // Evaluate image upload rules (handle blur_media, display risk reasons & degradation status)
+    let safety = if !is_contact || is_blocked {
+        crate::models::SafetyObject {
+            severity: 82.0,
+            tier: "high".to_string(),
+            reasons: vec![
+                "Unsolicited media from non-contact".to_string(),
+                "NSFW inference connecting (rule degradation active)".to_string(),
+            ],
+            signals: HashMap::from([
+                ("heuristic_risk".to_string(), 0.82),
+                ("nsfw_model_status".to_string(), 0.0),
+            ]),
+            recommended_action: "blur_media".to_string(),
+            state: "Blurred".to_string(),
+            simulated: true,
+            tags: vec![
+                "DEMO PROXY IMAGE".to_string(),
+                "SIMULATED".to_string(),
+                "NSFW_INFERENCE_CONNECTING".to_string(),
+            ],
+        }
+    } else {
+        crate::models::SafetyObject {
+            severity: 12.0,
+            tier: "low".to_string(),
+            reasons: vec![
+                "Media shared within active contact thread".to_string(),
+                "NSFW inference connecting (clean heuristic)".to_string(),
+            ],
+            signals: HashMap::from([("heuristic_risk".to_string(), 0.12)]),
+            recommended_action: "log".to_string(),
+            state: "Delivered".to_string(),
+            simulated: true,
+            tags: vec!["DEMO PROXY IMAGE".to_string(), "SIMULATED".to_string()],
+        }
+    };
+
+    let msg = SafeMessage {
+        id: msg_id,
+        chat_id: id.clone(),
+        sender_id,
+        recipient_id,
+        kind,
+        text: file_name,
+        media_url: Some("assets/proxy_nsfw.png".to_string()),
+        transcript: None,
+        timestamp: occurred_at,
+        safety,
+    };
+
+    {
+        let mut chats = state.chats.write().await;
+        chats.entry(id).or_default().push(msg.clone());
+    }
+
+    let _ = state.tx.send(WsEvent {
+        event: "message".to_string(),
+        payload: serde_json::to_value(&msg).unwrap_or_default(),
+    });
+
+    Ok(Json(msg))
+}

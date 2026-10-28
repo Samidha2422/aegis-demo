@@ -2,7 +2,7 @@ use crate::models::{CallRecord, SafetyObject};
 use crate::state::AppState;
 use axum::{extract::State, http::StatusCode, Json};
 use chrono::Utc;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use uuid::Uuid;
 
 #[derive(Deserialize)]
