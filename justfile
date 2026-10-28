@@ -29,6 +29,14 @@ app-test: _ensure-logs
 app-install: _ensure-logs
     @powershell.exe -ExecutionPolicy Bypass -File scripts/app-install.ps1
 
+# Android MDNS Discovery Check
+app-mdns: _ensure-logs
+    @powershell.exe -ExecutionPolicy Bypass -File scripts/app-mdns.ps1
+
+# Android Devices Check
+app-devices: _ensure-logs
+    @powershell.exe -ExecutionPolicy Bypass -File scripts/app-devices.ps1
+
 # Android App Smoke Test (Launch & Screen Capture)
 app-smoke: _ensure-logs
     @powershell.exe -ExecutionPolicy Bypass -File scripts/app-smoke.ps1
