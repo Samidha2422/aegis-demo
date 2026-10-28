@@ -1,6 +1,7 @@
 package com.aegis.demo.ui.feed
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -64,79 +65,92 @@ fun FeedScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            text = "Public Feed",
-                            style = MaterialTheme.typography.titleLarge
-                        )
-                        Text(
-                            text = "Scenario 2: Dogpiling & Mob Defense",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(onClick = onOpenDirector) {
-                        Icon(
-                            imageVector = Icons.Outlined.PlayCircle,
-                            contentDescription = "Demo Scenarios"
-                        )
-                    }
-                }
-            )
-        },
-        bottomBar = {
-            Surface(
-                tonalElevation = 2.dp,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    TextField(
-                        value = commentText,
-                        onValueChange = { commentText = it },
-                        placeholder = {
+            Column {
+                TopAppBar(
+                    title = {
+                        Column {
                             Text(
-                                text = "Add a comment...",
-                                style = MaterialTheme.typography.bodyMedium,
+                                text = "Discussions",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Community Feed • Dogpiling & Mob Defense",
+                                style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                        },
-                        modifier = Modifier.weight(1f),
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = Color.Transparent,
-                            unfocusedContainerColor = Color.Transparent,
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent
-                        )
-                    )
-                    IconButton(
-                        onClick = {
-                            if (commentText.isNotBlank()) {
-                                scope.launch {
-                                    repository.addComment(post.id, commentText)
-                                    commentText = ""
-                                }
-                            }
-                        },
-                        enabled = commentText.isNotBlank()
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        titleContentColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    actions = {
+                        IconButton(onClick = onOpenDirector) {
+                            Icon(
+                                imageVector = Icons.Outlined.PlayCircle,
+                                contentDescription = "Demo Scenarios",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                )
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
+            }
+        },
+        bottomBar = {
+            Column {
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
+                Surface(
+                    color = MaterialTheme.colorScheme.surface,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Send,
-                            contentDescription = "Send",
-                            tint = if (commentText.isNotBlank()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+                        TextField(
+                            value = commentText,
+                            onValueChange = { commentText = it },
+                            placeholder = {
+                                Text(
+                                    text = "Add a comment...",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.outline
+                                )
+                            },
+                            modifier = Modifier.weight(1f),
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent
+                            )
                         )
+                        IconButton(
+                            onClick = {
+                                if (commentText.isNotBlank()) {
+                                    scope.launch {
+                                        repository.addComment(post.id, commentText)
+                                        commentText = ""
+                                    }
+                                }
+                            },
+                            enabled = commentText.isNotBlank()
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.Send,
+                                contentDescription = "Send",
+                                tint = if (commentText.isNotBlank()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+                            )
+                        }
                     }
                 }
             }
         },
+        containerColor = MaterialTheme.colorScheme.background,
         modifier = modifier.fillMaxSize()
     ) { paddingValues ->
         LazyColumn(
@@ -147,17 +161,22 @@ fun FeedScreen(
         ) {
             // Post Card
             item {
-                ElevatedCard(
+                Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 12.dp),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(10.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Surface(
                                 shape = CircleShape,
                                 color = MaterialTheme.colorScheme.primaryContainer,
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
                                 modifier = Modifier.size(40.dp)
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
@@ -165,20 +184,37 @@ fun FeedScreen(
                                         text = "M",
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                        color = MaterialTheme.colorScheme.primary
                                     )
                                 }
                             }
                             Spacer(modifier = Modifier.width(12.dp))
                             Column {
-                                Text(
-                                    text = "Meera Patel",
-                                    style = MaterialTheme.typography.titleMedium
-                                )
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = "Meera Patel",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Surface(
+                                        shape = RoundedCornerShape(4.dp),
+                                        color = MaterialTheme.colorScheme.surfaceVariant,
+                                        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+                                    ) {
+                                        Text(
+                                            text = "LEAD",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                        )
+                                    }
+                                }
                                 Text(
                                     text = post.timestamp,
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = MaterialTheme.colorScheme.outline
                                 )
                             }
                         }
@@ -186,7 +222,8 @@ fun FeedScreen(
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(
                             text = post.content,
-                            style = MaterialTheme.typography.bodyLarge
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
@@ -198,18 +235,28 @@ fun FeedScreen(
                     colors = CardDefaults.cardColors(
                         containerColor = SafetyTheme.highRiskContainer
                     ),
-                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, SafetyTheme.highRiskBorder),
+                    shape = RoundedCornerShape(10.dp),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 8.dp)
+                        .padding(bottom = 12.dp)
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
+                    Column(modifier = Modifier.padding(14.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.Shield,
-                                contentDescription = "Mob Shield",
-                                tint = SafetyTheme.highRisk
-                            )
+                            Surface(
+                                shape = CircleShape,
+                                color = SafetyTheme.highRisk,
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Default.Shield,
+                                        contentDescription = "Mob Shield",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
                             Spacer(modifier = Modifier.width(12.dp))
                             Column {
                                 Text(
@@ -233,12 +280,14 @@ fun FeedScreen(
                         ) {
                             Surface(
                                 shape = RoundedCornerShape(4.dp),
-                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)
+                                color = MaterialTheme.colorScheme.surface,
+                                border = BorderStroke(1.dp, SafetyTheme.highRiskBorder)
                             ) {
                                 Text(
                                     text = "Modularity: 0.84",
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurface,
+                                    fontWeight = FontWeight.Bold,
+                                    color = SafetyTheme.highRisk,
                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                 )
                             }
@@ -260,8 +309,9 @@ fun FeedScreen(
 
             item {
                 Text(
-                    text = "Comments (${demoComments.size})",
+                    text = "Discussion (${demoComments.size})",
                     style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
             }
@@ -271,7 +321,8 @@ fun FeedScreen(
                 if (!isQuarantined || showQuarantinedComments) {
                     Surface(
                         shape = RoundedCornerShape(8.dp),
-                        color = if (isQuarantined) SafetyTheme.highRiskContainer.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surfaceContainerLow,
+                        color = if (isQuarantined) SafetyTheme.highRiskContainer else MaterialTheme.colorScheme.surface,
+                        border = BorderStroke(1.dp, if (isQuarantined) SafetyTheme.highRiskBorder else MaterialTheme.colorScheme.outlineVariant),
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 4.dp)
@@ -282,36 +333,51 @@ fun FeedScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(
-                                    text = "@${comment.author_id}",
-                                    style = MaterialTheme.typography.titleSmall
-                                )
-                                if (isQuarantined) {
-                                    Surface(
-                                        shape = RoundedCornerShape(4.dp),
-                                        color = MaterialTheme.colorScheme.error
-                                    ) {
-                                        Text(
-                                            text = "QUARANTINED",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.onError,
-                                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
-                                        )
-                                    }
-                                } else {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(
-                                        text = comment.timestamp,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        text = "@${comment.author_id}",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = if (isQuarantined) SafetyTheme.onHighRiskContainer else MaterialTheme.colorScheme.onSurface
                                     )
+                                    if (isQuarantined) {
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Surface(
+                                            shape = RoundedCornerShape(4.dp),
+                                            color = SafetyTheme.highRisk,
+                                            modifier = Modifier.padding(horizontal = 2.dp)
+                                        ) {
+                                            Text(
+                                                text = "QUARANTINED",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color.White,
+                                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                            )
+                                        }
+                                    }
                                 }
+                                Text(
+                                    text = comment.timestamp,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.outline
+                                )
                             }
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = comment.content,
-                                style = MaterialTheme.typography.bodyMedium
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = if (isQuarantined) SafetyTheme.onHighRiskContainer else MaterialTheme.colorScheme.onSurfaceVariant
                             )
+
+                            if (comment.safety.reasons.isNotEmpty()) {
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(
+                                    text = "Rule: ${comment.safety.reasons.joinToString(", ")}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = SafetyTheme.highRisk
+                                )
+                            }
                         }
                     }
                 }

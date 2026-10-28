@@ -16,7 +16,14 @@ class MainActivity : ComponentActivity() {
 
     enableEdgeToEdge()
     setContent {
-      AegisDemoTheme { Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) { MainNavigation() } }
+      AegisDemoTheme(darkTheme = false) {
+        Surface(
+          modifier = Modifier.fillMaxSize(),
+          color = MaterialTheme.colorScheme.background
+        ) {
+          MainNavigation()
+        }
+      }
     }
   }
 }

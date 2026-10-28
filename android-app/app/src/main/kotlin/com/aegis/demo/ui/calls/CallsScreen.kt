@@ -1,5 +1,6 @@
 package com.aegis.demo.ui.calls
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -41,44 +42,57 @@ fun CallsScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            text = "Call History",
-                            style = MaterialTheme.typography.titleLarge
-                        )
-                        Text(
-                            text = if (hasSpike) "Quiet-Hour Repeated Spike Active" else "Recent Voice Activity",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = if (hasSpike) SafetyTheme.highRisk else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+            Column {
+                TopAppBar(
+                    title = {
+                        Column {
+                            Text(
+                                text = "Call History",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = if (hasSpike) "Quiet-Hour Repeated Spike Active" else "VoIP Audit & Activity",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (hasSpike) SafetyTheme.highRisk else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        titleContentColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    actions = {
+                        OutlinedButton(
+                            onClick = {
+                                scope.launch {
+                                    repository.simulateCall("unknown_stalker")
+                                }
+                                showSimulateDialog = true
+                            },
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.PhoneInTalk,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Simulate Call",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
-                },
-                actions = {
-                    FilledTonalButton(
-                        onClick = {
-                            scope.launch {
-                                repository.simulateCall("unknown_stalker")
-                            }
-                            showSimulateDialog = true
-                        },
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.PhoneInTalk,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = "Simulate Call",
-                            style = MaterialTheme.typography.labelSmall
-                        )
-                    }
-                }
-            )
+                )
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
+            }
         },
+        containerColor = MaterialTheme.colorScheme.background,
         modifier = modifier.fillMaxSize()
     ) { paddingValues ->
         if (calls.isEmpty()) {
@@ -99,6 +113,7 @@ fun CallsScreen(
                     Text(
                         text = "No calls recorded",
                         style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -115,32 +130,42 @@ fun CallsScreen(
                     item {
                         Card(
                             colors = CardDefaults.cardColors(
-                                containerColor = SafetyTheme.criticalRiskContainer
+                                containerColor = SafetyTheme.highRiskContainer
                             ),
-                            shape = RoundedCornerShape(12.dp),
+                            border = BorderStroke(1.dp, SafetyTheme.highRiskBorder),
+                            shape = RoundedCornerShape(10.dp),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 12.dp)
                         ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
+                            Column(modifier = Modifier.padding(14.dp)) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        imageVector = Icons.Default.Shield,
-                                        contentDescription = "Shield",
-                                        tint = SafetyTheme.criticalRisk
-                                    )
+                                    Surface(
+                                        shape = CircleShape,
+                                        color = SafetyTheme.highRisk,
+                                        modifier = Modifier.size(32.dp)
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Icon(
+                                                imageVector = Icons.Default.Shield,
+                                                contentDescription = "Shield",
+                                                tint = Color.White,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
+                                    }
                                     Spacer(modifier = Modifier.width(12.dp))
                                     Column {
                                         Text(
                                             text = "QUIET-HOUR CALL SPIKE DETECTED",
                                             style = MaterialTheme.typography.labelSmall,
                                             fontWeight = FontWeight.Bold,
-                                            color = SafetyTheme.criticalRisk
+                                            color = SafetyTheme.highRisk
                                         )
                                         Text(
                                             text = "40 calls between 01:00 AM – 05:30 AM (92% unanswered).",
                                             style = MaterialTheme.typography.bodySmall,
-                                            color = SafetyTheme.onCriticalRiskContainer
+                                            color = SafetyTheme.onHighRiskContainer
                                         )
                                     }
                                 }
@@ -152,13 +177,14 @@ fun CallsScreen(
                                 ) {
                                     Surface(
                                         shape = RoundedCornerShape(4.dp),
-                                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f)
+                                        color = MaterialTheme.colorScheme.surface,
+                                        border = BorderStroke(1.dp, SafetyTheme.highRiskBorder)
                                     ) {
                                         Text(
                                             text = "Frequency Risk: 96/100",
                                             style = MaterialTheme.typography.labelSmall,
                                             fontWeight = FontWeight.Bold,
-                                            color = SafetyTheme.criticalRisk,
+                                            color = SafetyTheme.highRisk,
                                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                         )
                                     }
@@ -170,7 +196,7 @@ fun CallsScreen(
                                             text = "View Evidence",
                                             style = MaterialTheme.typography.labelSmall,
                                             fontWeight = FontWeight.SemiBold,
-                                            color = SafetyTheme.criticalRisk
+                                            color = SafetyTheme.highRisk
                                         )
                                     }
                                 }
@@ -183,7 +209,8 @@ fun CallsScreen(
                     CallRecordItem(call = call)
                     HorizontalDivider(
                         modifier = Modifier.padding(start = 56.dp),
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                        thickness = 0.5.dp
                     )
                 }
             }
@@ -203,7 +230,8 @@ fun CallsScreen(
                 title = {
                     Text(
                         text = "Incoming Call (Quiet Hours)",
-                        style = MaterialTheme.typography.titleMedium
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
                     )
                 },
                 text = {
@@ -227,8 +255,9 @@ fun CallsScreen(
 
                         Spacer(modifier = Modifier.height(12.dp))
                         Surface(
-                            color = MaterialTheme.colorScheme.surfaceContainerLow,
+                            color = MaterialTheme.colorScheme.surfaceVariant,
                             shape = RoundedCornerShape(8.dp),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Column(modifier = Modifier.padding(10.dp)) {
@@ -300,7 +329,8 @@ fun CallRecordItem(
     ) {
         Surface(
             shape = CircleShape,
-            color = if (isRisk) SafetyTheme.highRiskContainer else MaterialTheme.colorScheme.secondaryContainer,
+            color = if (isRisk) SafetyTheme.highRiskContainer else MaterialTheme.colorScheme.surfaceVariant,
+            border = BorderStroke(1.dp, if (isRisk) SafetyTheme.highRiskBorder else MaterialTheme.colorScheme.outlineVariant),
             modifier = Modifier.size(40.dp)
         ) {
             Box(contentAlignment = Alignment.Center) {
@@ -332,7 +362,8 @@ fun CallRecordItem(
                     Spacer(modifier = Modifier.width(6.dp))
                     Surface(
                         shape = RoundedCornerShape(3.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainerHighest
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
                     ) {
                         Text(
                             text = "SIMULATED",
@@ -349,7 +380,8 @@ fun CallRecordItem(
         if (isRisk) {
             Surface(
                 shape = RoundedCornerShape(4.dp),
-                color = SafetyTheme.highRiskContainer
+                color = SafetyTheme.highRiskContainer,
+                border = BorderStroke(1.dp, SafetyTheme.highRiskBorder)
             ) {
                 Text(
                     text = "Risk: ${call.safety.severity.toInt()}",

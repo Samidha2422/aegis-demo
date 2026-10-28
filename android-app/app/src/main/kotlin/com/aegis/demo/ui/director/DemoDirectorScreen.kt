@@ -1,6 +1,7 @@
 package com.aegis.demo.ui.director
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -60,30 +61,39 @@ fun DemoDirectorScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            text = "Demo Director",
-                            style = MaterialTheme.typography.titleLarge
-                        )
-                        Text(
-                            text = "Interactive Scenario Controller",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+            Column {
+                TopAppBar(
+                    title = {
+                        Column {
+                            Text(
+                                text = "Demo Director",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Interactive Scenario Controller",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        titleContentColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back"
+                            )
+                        }
                     }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
-                        )
-                    }
-                }
-            )
+                )
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
+            }
         },
+        containerColor = MaterialTheme.colorScheme.background,
         modifier = modifier.fillMaxSize()
     ) { paddingValues ->
         LazyColumn(
@@ -97,6 +107,7 @@ fun DemoDirectorScreen(
                 Text(
                     text = "Select Behavioral Scenario",
                     style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
 
@@ -109,9 +120,10 @@ fun DemoDirectorScreen(
                         Card(
                             onClick = { selectedScenario = sc.id },
                             colors = CardDefaults.cardColors(
-                                containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer
+                                containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
                             ),
-                            shape = RoundedCornerShape(12.dp),
+                            border = BorderStroke(if (isSelected) 1.5.dp else 1.dp, if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant),
+                            shape = RoundedCornerShape(10.dp),
                             modifier = Modifier.width(220.dp)
                         ) {
                             Column(modifier = Modifier.padding(12.dp)) {
@@ -124,10 +136,11 @@ fun DemoDirectorScreen(
                                         text = "Scenario ${sc.id}",
                                         style = MaterialTheme.typography.labelSmall,
                                         fontWeight = FontWeight.Bold,
-                                        color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.primary
+                                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                                     )
                                     Surface(
                                         color = if (sc.expectTier == "low") SafetyTheme.lowRiskContainer else SafetyTheme.highRiskContainer,
+                                        border = BorderStroke(0.5.dp, if (sc.expectTier == "low") SafetyTheme.lowRiskBorder else SafetyTheme.highRiskBorder),
                                         shape = RoundedCornerShape(4.dp)
                                     ) {
                                         Text(
@@ -139,17 +152,18 @@ fun DemoDirectorScreen(
                                         )
                                     }
                                 }
-                                Spacer(modifier = Modifier.height(4.dp))
+                                Spacer(modifier = Modifier.height(6.dp))
                                 Text(
                                     text = sc.title,
                                     style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold,
                                     maxLines = 1
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
                                     text = sc.desc,
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     maxLines = 3
                                 )
                             }
@@ -161,8 +175,12 @@ fun DemoDirectorScreen(
             // Playback Speed Slider & Controls
             item {
                 Spacer(modifier = Modifier.height(16.dp))
-                ElevatedCard(
-                    shape = RoundedCornerShape(12.dp),
+                Card(
+                    shape = RoundedCornerShape(10.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
@@ -173,17 +191,19 @@ fun DemoDirectorScreen(
                         ) {
                             Text(
                                 text = "Simulation Speed",
-                                style = MaterialTheme.typography.titleMedium
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold
                             )
                             Surface(
                                 shape = RoundedCornerShape(4.dp),
-                                color = MaterialTheme.colorScheme.primaryContainer
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
                             ) {
                                 Text(
                                     text = "${speed.toInt()}x Multiplier",
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    color = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                 )
                             }
@@ -230,7 +250,8 @@ fun DemoDirectorScreen(
                                         repository.resetDemo()
                                         currentProgress = null
                                     }
-                                }
+                                },
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                             ) {
                                 Icon(imageVector = Icons.Default.Refresh, contentDescription = "Reset")
                                 Spacer(modifier = Modifier.width(6.dp))
@@ -249,6 +270,7 @@ fun DemoDirectorScreen(
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.primaryContainer
                         ),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
                         shape = RoundedCornerShape(8.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -259,7 +281,8 @@ fun DemoDirectorScreen(
                             CircularProgressIndicator(
                                 progress = { prog.step_index.toFloat() / prog.total_steps.toFloat() },
                                 modifier = Modifier.size(24.dp),
-                                strokeWidth = 3.dp
+                                strokeWidth = 3.dp,
+                                color = MaterialTheme.colorScheme.primary
                             )
                             Spacer(modifier = Modifier.width(12.dp))
                             Column {
@@ -267,12 +290,12 @@ fun DemoDirectorScreen(
                                     text = "Step ${prog.step_index} of ${prog.total_steps} (${prog.actor})",
                                     style = MaterialTheme.typography.labelMedium,
                                     fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    color = MaterialTheme.colorScheme.primary
                                 )
                                 Text(
                                     text = prog.description,
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                             }
                         }
@@ -285,7 +308,8 @@ fun DemoDirectorScreen(
                 Spacer(modifier = Modifier.height(24.dp))
                 Text(
                     text = "Engine vs Legacy Filter (Comparator C1)",
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
                 )
                 Text(
                     text = "Side-by-side evaluation of subtle harassment patterns.",
@@ -296,9 +320,10 @@ fun DemoDirectorScreen(
 
                 Card(
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                        containerColor = MaterialTheme.colorScheme.surface
                     ),
-                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                    shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
@@ -309,7 +334,8 @@ fun DemoDirectorScreen(
                             // Legacy Keyword Card
                             Surface(
                                 shape = RoundedCornerShape(8.dp),
-                                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                                 modifier = Modifier.weight(1f)
                             ) {
                                 Column(modifier = Modifier.padding(12.dp)) {
@@ -339,6 +365,7 @@ fun DemoDirectorScreen(
                             Surface(
                                 shape = RoundedCornerShape(8.dp),
                                 color = SafetyTheme.highRiskContainer,
+                                border = BorderStroke(1.dp, SafetyTheme.highRiskBorder),
                                 modifier = Modifier.weight(1f)
                             ) {
                                 Column(modifier = Modifier.padding(12.dp)) {

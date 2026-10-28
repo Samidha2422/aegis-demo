@@ -71,126 +71,135 @@ fun ChatScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.secondaryContainer,
-                            modifier = Modifier.size(40.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Text(
-                                    text = currentChat.participant.name.take(1).uppercase(),
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                                )
+            Column {
+                TopAppBar(
+                    title = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+                                modifier = Modifier.size(38.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(
+                                        text = currentChat.participant.name.take(1).uppercase(),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
                             }
-                        }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = currentChat.participant.name,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                                if (currentChat.participant.is_blocked) {
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Surface(
-                                        shape = RoundedCornerShape(4.dp),
-                                        color = MaterialTheme.colorScheme.error
-                                    ) {
-                                        Text(
-                                            text = "BLOCKED",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.onError,
-                                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
-                                        )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = currentChat.participant.name,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    if (currentChat.participant.is_blocked) {
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Surface(
+                                            shape = RoundedCornerShape(4.dp),
+                                            color = MaterialTheme.colorScheme.error
+                                        ) {
+                                            Text(
+                                                text = "BLOCKED",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onError,
+                                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                            )
+                                        }
                                     }
                                 }
+                                Text(
+                                    text = if (currentChat.participant.is_blocked) "Blocked" else "Active now",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             }
-                            Text(
-                                text = if (currentChat.participant.is_blocked) "Blocked" else "Active now",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
                         }
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
-                        )
-                    }
-                },
-                actions = {
-                    if (hasHighRiskBreach) {
-                        IconButton(onClick = onOpenSafetyCenter) {
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        titleContentColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
                             Icon(
-                                imageVector = Icons.Filled.Shield,
-                                contentDescription = "Safety Center",
-                                tint = SafetyTheme.highRisk
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back"
                             )
                         }
-                    } else {
-                        IconButton(onClick = onOpenSafetyCenter) {
-                            Icon(
-                                imageVector = Icons.Outlined.Shield,
-                                contentDescription = "Safety Center",
-                                tint = MaterialTheme.colorScheme.outline
-                            )
-                        }
-                    }
-                    IconButton(onClick = { showMenu = true }) {
-                        Icon(
-                            imageVector = Icons.Default.MoreVert,
-                            contentDescription = "Options"
-                        )
-                    }
-                    DropdownMenu(
-                        expanded = showMenu,
-                        onDismissRequest = { showMenu = false }
-                    ) {
-                        if (currentChat.participant.is_blocked) {
-                            DropdownMenuItem(
-                                text = { Text("Unblock Contact") },
-                                onClick = {
-                                    scope.launch { repository.unblockUser(currentChat.participant.id) }
-                                    showMenu = false
-                                }
-                            )
+                    },
+                    actions = {
+                        if (hasHighRiskBreach) {
+                            IconButton(onClick = onOpenSafetyCenter) {
+                                Icon(
+                                    imageVector = Icons.Filled.Shield,
+                                    contentDescription = "Safety Center",
+                                    tint = SafetyTheme.highRisk
+                                )
+                            }
                         } else {
+                            IconButton(onClick = onOpenSafetyCenter) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Shield,
+                                    contentDescription = "Safety Center",
+                                    tint = MaterialTheme.colorScheme.outline
+                                )
+                            }
+                        }
+                        IconButton(onClick = { showMenu = true }) {
+                            Icon(
+                                imageVector = Icons.Default.MoreVert,
+                                contentDescription = "Options"
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false }
+                        ) {
+                            if (currentChat.participant.is_blocked) {
+                                DropdownMenuItem(
+                                    text = { Text("Unblock Contact") },
+                                    onClick = {
+                                        scope.launch { repository.unblockUser(currentChat.participant.id) }
+                                        showMenu = false
+                                    }
+                                )
+                            } else {
+                                DropdownMenuItem(
+                                    text = { Text("Block Contact") },
+                                    onClick = {
+                                        scope.launch { repository.blockUser(currentChat.participant.id) }
+                                        showMenu = false
+                                    }
+                                )
+                            }
                             DropdownMenuItem(
-                                text = { Text("Block Contact") },
+                                text = { Text("Mute Notifications") },
                                 onClick = {
-                                    scope.launch { repository.blockUser(currentChat.participant.id) }
+                                    scope.launch { repository.muteUser(currentChat.participant.id) }
+                                    showMenu = false
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Report Conversation") },
+                                onClick = {
+                                    scope.launch { repository.submitReport(null, currentChat.participant.id, "harassment") }
                                     showMenu = false
                                 }
                             )
                         }
-                        DropdownMenuItem(
-                            text = { Text("Mute Notifications") },
-                            onClick = {
-                                scope.launch { repository.muteUser(currentChat.participant.id) }
-                                showMenu = false
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Report Conversation") },
-                            onClick = {
-                                scope.launch { repository.submitReport(null, currentChat.participant.id, "harassment") }
-                                showMenu = false
-                            }
-                        )
                     }
-                }
-            )
+                )
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
+            }
         },
         bottomBar = {
             ComposerFloatingToolbar(
@@ -204,6 +213,7 @@ fun ChatScreen(
                 }
             )
         },
+        containerColor = MaterialTheme.colorScheme.background,
         modifier = modifier.fillMaxSize()
     ) { paddingValues ->
         Column(
@@ -215,6 +225,7 @@ fun ChatScreen(
             if (hasHighRiskBreach) {
                 Surface(
                     color = SafetyTheme.highRiskContainer,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, SafetyTheme.highRiskBorder),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {

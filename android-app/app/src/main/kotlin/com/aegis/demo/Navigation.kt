@@ -1,8 +1,10 @@
 package com.aegis.demo
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
@@ -33,71 +35,92 @@ fun MainNavigation() {
     Scaffold(
         bottomBar = {
             if (isPrimaryTab) {
-                NavigationBar {
-                    NavigationBarItem(
-                        selected = currentKey is ChatsListKey,
-                        onClick = {
-                            if (currentKey !is ChatsListKey) {
-                                backStack.clear()
-                                backStack.add(ChatsListKey)
-                            }
-                        },
-                        icon = {
-                            Icon(
-                                imageVector = if (currentKey is ChatsListKey) Icons.Filled.ChatBubble else Icons.Outlined.ChatBubbleOutline,
-                                contentDescription = "Chats"
-                            )
-                        },
-                        label = { Text("Chats") }
+                Column {
+                    HorizontalDivider(
+                        color = MaterialTheme.colorScheme.outlineVariant,
+                        thickness = 1.dp
                     )
-                    NavigationBarItem(
-                        selected = currentKey is FeedKey,
-                        onClick = {
-                            if (currentKey !is FeedKey) {
-                                backStack.clear()
-                                backStack.add(FeedKey)
-                            }
-                        },
-                        icon = {
-                            Icon(
-                                imageVector = if (currentKey is FeedKey) Icons.Filled.DynamicFeed else Icons.Outlined.DynamicFeed,
-                                contentDescription = "Feed"
-                            )
-                        },
-                        label = { Text("Feed") }
-                    )
-                    NavigationBarItem(
-                        selected = currentKey is CallsKey,
-                        onClick = {
-                            if (currentKey !is CallsKey) {
-                                backStack.clear()
-                                backStack.add(CallsKey)
-                            }
-                        },
-                        icon = {
-                            Icon(
-                                imageVector = if (currentKey is CallsKey) Icons.Filled.PhoneCallback else Icons.Outlined.PhoneCallback,
-                                contentDescription = "Calls"
-                            )
-                        },
-                        label = { Text("Calls") }
-                    )
-                    NavigationBarItem(
-                        selected = currentKey is SafetyCenterKey,
-                        onClick = {
-                            if (currentKey !is SafetyCenterKey) {
-                                backStack.clear()
-                                backStack.add(SafetyCenterKey)
-                            }
-                        },
-                        icon = {
-                            Icon(
-                                imageVector = if (currentKey is SafetyCenterKey) Icons.Filled.Shield else Icons.Outlined.Shield,
-                                contentDescription = "Safety"
-                            )
-                        },
-                        label = { Text("Safety") }
-                    )
+                    NavigationBar(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        tonalElevation = 0.dp
+                    ) {
+                        val navItemColors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = MaterialTheme.colorScheme.primary,
+                            selectedTextColor = MaterialTheme.colorScheme.primary,
+                            indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        NavigationBarItem(
+                            selected = currentKey is ChatsListKey,
+                            onClick = {
+                                if (currentKey !is ChatsListKey) {
+                                    backStack.clear()
+                                    backStack.add(ChatsListKey)
+                                }
+                            },
+                            icon = {
+                                Icon(
+                                    imageVector = if (currentKey is ChatsListKey) Icons.Filled.ChatBubble else Icons.Outlined.ChatBubbleOutline,
+                                    contentDescription = "Chats"
+                                )
+                            },
+                            label = { Text("Chats", fontWeight = if (currentKey is ChatsListKey) androidx.compose.ui.text.font.FontWeight.SemiBold else androidx.compose.ui.text.font.FontWeight.Normal) },
+                            colors = navItemColors
+                        )
+                        NavigationBarItem(
+                            selected = currentKey is FeedKey,
+                            onClick = {
+                                if (currentKey !is FeedKey) {
+                                    backStack.clear()
+                                    backStack.add(FeedKey)
+                                }
+                            },
+                            icon = {
+                                Icon(
+                                    imageVector = if (currentKey is FeedKey) Icons.Filled.DynamicFeed else Icons.Outlined.DynamicFeed,
+                                    contentDescription = "Feed"
+                                )
+                            },
+                            label = { Text("Feed", fontWeight = if (currentKey is FeedKey) androidx.compose.ui.text.font.FontWeight.SemiBold else androidx.compose.ui.text.font.FontWeight.Normal) },
+                            colors = navItemColors
+                        )
+                        NavigationBarItem(
+                            selected = currentKey is CallsKey,
+                            onClick = {
+                                if (currentKey !is CallsKey) {
+                                    backStack.clear()
+                                    backStack.add(CallsKey)
+                                }
+                            },
+                            icon = {
+                                Icon(
+                                    imageVector = if (currentKey is CallsKey) Icons.Filled.PhoneCallback else Icons.Outlined.PhoneCallback,
+                                    contentDescription = "Calls"
+                                )
+                            },
+                            label = { Text("Calls", fontWeight = if (currentKey is CallsKey) androidx.compose.ui.text.font.FontWeight.SemiBold else androidx.compose.ui.text.font.FontWeight.Normal) },
+                            colors = navItemColors
+                        )
+                        NavigationBarItem(
+                            selected = currentKey is SafetyCenterKey,
+                            onClick = {
+                                if (currentKey !is SafetyCenterKey) {
+                                    backStack.clear()
+                                    backStack.add(SafetyCenterKey)
+                                }
+                            },
+                            icon = {
+                                Icon(
+                                    imageVector = if (currentKey is SafetyCenterKey) Icons.Filled.Shield else Icons.Outlined.Shield,
+                                    contentDescription = "Safety"
+                                )
+                            },
+                            label = { Text("Safety", fontWeight = if (currentKey is SafetyCenterKey) androidx.compose.ui.text.font.FontWeight.SemiBold else androidx.compose.ui.text.font.FontWeight.Normal) },
+                            colors = navItemColors
+                        )
+                    }
                 }
             }
         },

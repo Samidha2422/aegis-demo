@@ -1,5 +1,6 @@
 package com.aegis.demo.ui.chats
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -15,6 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -39,54 +41,66 @@ fun ChatsListScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            text = "Messages",
-                            style = MaterialTheme.typography.titleLarge
-                        )
-                        activePersona?.let { p ->
+            Column {
+                TopAppBar(
+                    title = {
+                        Column {
                             Text(
-                                text = "Active Persona: ${p.name}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                text = "Inbox",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold
                             )
-                        }
-                    }
-                },
-                actions = {
-                    IconButton(onClick = onOpenDirector) {
-                        Icon(
-                            imageVector = Icons.Outlined.PlayCircle,
-                            contentDescription = "Demo Scenarios"
-                        )
-                    }
-                    IconButton(onClick = onOpenPersonaPicker) {
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
+                            activePersona?.let { p ->
                                 Text(
-                                    text = activePersona?.name?.take(1)?.uppercase() ?: "M",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    text = "Workspace • ${p.name} (${p.role})",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        titleContentColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    actions = {
+                        IconButton(onClick = onOpenDirector) {
+                            Icon(
+                                imageVector = Icons.Outlined.PlayCircle,
+                                contentDescription = "Demo Scenarios",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        IconButton(onClick = onOpenPersonaPicker) {
+                            Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(
+                                        text = activePersona?.name?.take(1)?.uppercase() ?: "A",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                        }
+                        IconButton(onClick = onOpenSettings) {
+                            Icon(
+                                imageVector = Icons.Outlined.Settings,
+                                contentDescription = "Settings",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
-                    IconButton(onClick = onOpenSettings) {
-                        Icon(
-                            imageVector = Icons.Outlined.Settings,
-                            contentDescription = "Settings"
-                        )
-                    }
-                }
-            )
+                )
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
+            }
         },
+        containerColor = MaterialTheme.colorScheme.background,
         modifier = modifier.fillMaxSize()
     ) { paddingValues ->
         if (chats.isEmpty()) {
@@ -110,6 +124,7 @@ fun ChatsListScreen(
                     Text(
                         text = "No active conversations",
                         style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(8.dp))
@@ -131,35 +146,45 @@ fun ChatsListScreen(
                     item {
                         Card(
                             colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.6f)
+                                containerColor = SafetyTheme.highRiskContainer
                             ),
-                            shape = RoundedCornerShape(12.dp),
+                            border = BorderStroke(1.dp, SafetyTheme.highRiskBorder),
+                            shape = RoundedCornerShape(10.dp),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp, vertical = 8.dp)
                         ) {
                             Row(
-                                modifier = Modifier.padding(16.dp),
+                                modifier = Modifier.padding(14.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.Shield,
-                                    contentDescription = "Shield",
-                                    tint = MaterialTheme.colorScheme.onErrorContainer
-                                )
-                                Spacer(modifier = Modifier.width(16.dp))
+                                Surface(
+                                    shape = CircleShape,
+                                    color = SafetyTheme.highRisk,
+                                    modifier = Modifier.size(32.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            imageVector = Icons.Default.Shield,
+                                            contentDescription = "Shield",
+                                            tint = Color.White,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text = "$totalHeld Messages Held for Safety",
+                                        text = "$totalHeld Messages Quarantined by Engine",
                                         style = MaterialTheme.typography.titleSmall,
                                         fontWeight = FontWeight.SemiBold,
-                                        color = MaterialTheme.colorScheme.onErrorContainer
+                                        color = SafetyTheme.onHighRiskContainer
                                     )
                                     Spacer(modifier = Modifier.height(2.dp))
                                     Text(
                                         text = "Behavioral risk threshold exceeded. Quarantined from inbox.",
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onErrorContainer
+                                        color = SafetyTheme.onHighRiskContainer.copy(alpha = 0.85f)
                                     )
                                 }
                             }
@@ -173,8 +198,9 @@ fun ChatsListScreen(
                         onClick = { onSelectChat(thread.id) }
                     )
                     HorizontalDivider(
-                        modifier = Modifier.padding(start = 72.dp, end = 16.dp),
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+                        modifier = Modifier.padding(start = 76.dp, end = 16.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f),
+                        thickness = 0.5.dp
                     )
                 }
             }
@@ -190,10 +216,14 @@ fun ChatThreadItem(
 ) {
     val participant = thread.participant
 
-    val (badgeBg, badgeFg, badgeText) = when (thread.max_tier) {
-        "high", "urgent" -> Triple(SafetyTheme.highRiskContainer, SafetyTheme.onHighRiskContainer, "HIGH RISK")
-        "review" -> Triple(SafetyTheme.reviewRiskContainer, SafetyTheme.onReviewRiskContainer, "REVIEW")
-        else -> Triple(MaterialTheme.colorScheme.surfaceContainerHigh, MaterialTheme.colorScheme.onSurfaceVariant, null)
+    val (badgeBg, badgeBorder, badgeFg, badgeText) = when (thread.max_tier) {
+        "high", "urgent" -> if (thread.held_count > 0) {
+            Tuple4(SafetyTheme.highRiskContainer, SafetyTheme.highRiskBorder, SafetyTheme.onHighRiskContainer, "HIGH RISK")
+        } else {
+            Tuple4(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.colorScheme.outlineVariant, MaterialTheme.colorScheme.onSurfaceVariant, null)
+        }
+        "review" -> Tuple4(SafetyTheme.reviewRiskContainer, SafetyTheme.reviewRiskBorder, SafetyTheme.onReviewRiskContainer, "REVIEW")
+        else -> Tuple4(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.colorScheme.outlineVariant, MaterialTheme.colorScheme.onSurfaceVariant, null)
     }
 
     Row(
@@ -206,20 +236,21 @@ fun ChatThreadItem(
         // Avatar
         Surface(
             shape = CircleShape,
-            color = MaterialTheme.colorScheme.secondaryContainer,
-            modifier = Modifier.size(48.dp)
+            color = MaterialTheme.colorScheme.primaryContainer,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+            modifier = Modifier.size(46.dp)
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Text(
                     text = participant.name.take(1).uppercase(),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         }
 
-        Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(14.dp))
 
         // Content
         Column(modifier = Modifier.weight(1f)) {
@@ -231,6 +262,8 @@ fun ChatThreadItem(
                 Text(
                     text = participant.name,
                     style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -238,7 +271,7 @@ fun ChatThreadItem(
                     Text(
                         text = lm.timestamp,
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.outline
                     )
                 }
             }
@@ -280,6 +313,7 @@ fun ChatThreadItem(
                         Surface(
                             shape = RoundedCornerShape(4.dp),
                             color = badgeBg,
+                            border = BorderStroke(1.dp, badgeBorder),
                             modifier = Modifier.padding(start = 8.dp)
                         ) {
                             Text(
@@ -296,3 +330,5 @@ fun ChatThreadItem(
         }
     }
 }
+
+private data class Tuple4<A, B, C, D>(val a: A, val b: B, val c: C, val d: D)

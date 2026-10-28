@@ -81,7 +81,8 @@ fun ComposerFloatingToolbar(
                 colors = CardDefaults.cardColors(
                     containerColor = SafetyTheme.reviewRiskContainer
                 ),
-                shape = RoundedCornerShape(12.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, SafetyTheme.reviewRiskBorder),
+                shape = RoundedCornerShape(10.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 8.dp)
@@ -152,21 +153,24 @@ fun ComposerFloatingToolbar(
         }
 
         // Floating Composer Toolbar
-        HorizontalFloatingToolbar(
-            expanded = true,
+        Surface(
+            shape = RoundedCornerShape(24.dp),
+            color = MaterialTheme.colorScheme.surface,
+            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            shadowElevation = 2.dp,
             modifier = Modifier.fillMaxWidth()
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                    .padding(horizontal = 8.dp, vertical = 2.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = {}) {
                     Icon(
                         imageVector = Icons.Default.AttachFile,
                         contentDescription = "Attach Media",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = MaterialTheme.colorScheme.outline
                     )
                 }
 
@@ -177,7 +181,7 @@ fun ComposerFloatingToolbar(
                         Text(
                             text = "Type a message...",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.outline
                         )
                     },
                     modifier = Modifier.weight(1f),
@@ -192,15 +196,37 @@ fun ComposerFloatingToolbar(
                     keyboardActions = KeyboardActions(onSend = { submit() })
                 )
 
-                IconButton(
-                    onClick = { submit() },
-                    enabled = text.isNotBlank()
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.Send,
-                        contentDescription = "Send",
-                        tint = if (text.isNotBlank()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
-                    )
+                if (text.isNotBlank()) {
+                    IconButton(
+                        onClick = { submit() }
+                    ) {
+                        Surface(
+                            shape = androidx.compose.foundation.shape.CircleShape,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.Send,
+                                    contentDescription = "Send",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    IconButton(
+                        onClick = {},
+                        enabled = false
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Send,
+                            contentDescription = "Send",
+                            tint = MaterialTheme.colorScheme.outlineVariant,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 }
             }
         }

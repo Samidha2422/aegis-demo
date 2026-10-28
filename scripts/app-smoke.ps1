@@ -1,4 +1,4 @@
-$env:PATH = "C:\ProgramData\AndroidCLI;C:\Users\samid\AppData\Local\Android\Sdk\platform-tools;" + $env:PATH
+$env:PATH = "C:\Users\samid\AppData\Local\Microsoft\WinGet\Packages\Google.PlatformTools_Microsoft.Winget.Source_8wekyb3d8bbwe\platform-tools;C:\ProgramData\AndroidCLI;C:\Users\samid\AppData\Local\Android\Sdk\platform-tools;" + $env:PATH
 try {
     cmd.exe /c "adb shell am start -n com.aegis.demo/.MainActivity > build-logs\app-smoke.log 2>&1"
     Start-Sleep -Seconds 3

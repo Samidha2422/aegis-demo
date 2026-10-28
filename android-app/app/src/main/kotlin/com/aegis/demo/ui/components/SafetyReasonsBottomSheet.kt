@@ -1,5 +1,6 @@
 package com.aegis.demo.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -32,6 +33,7 @@ fun SafetyReasonsBottomSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.surface,
         modifier = modifier
     ) {
         Column(
@@ -49,7 +51,8 @@ fun SafetyReasonsBottomSheet(
                 Column {
                     Text(
                         text = "Safety Analysis",
-                        style = MaterialTheme.typography.titleLarge
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
                     )
                     Text(
                         text = "SHAP feature contribution breakdown",
@@ -75,14 +78,16 @@ fun SafetyReasonsBottomSheet(
             // SHAP Behavioral Reasons
             Text(
                 text = "Key Behavioral Factors",
-                style = MaterialTheme.typography.titleMedium
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(8.dp))
 
             if (safety.reasons.isEmpty()) {
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerLow,
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
@@ -96,7 +101,8 @@ fun SafetyReasonsBottomSheet(
                 safety.reasons.forEach { reason ->
                     Surface(
                         shape = RoundedCornerShape(8.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainerLow,
+                        color = MaterialTheme.colorScheme.surface,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 3.dp)
@@ -114,7 +120,8 @@ fun SafetyReasonsBottomSheet(
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(
                                 text = reason,
-                                style = MaterialTheme.typography.bodyMedium
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                         }
                     }
@@ -126,14 +133,16 @@ fun SafetyReasonsBottomSheet(
                 Spacer(modifier = Modifier.height(20.dp))
                 Text(
                     text = "Multimodal Signal Weights",
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Card(
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                        containerColor = MaterialTheme.colorScheme.surface
                     ),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                     shape = RoundedCornerShape(10.dp)
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
@@ -152,7 +161,8 @@ fun SafetyReasonsBottomSheet(
                                 Text(
                                     text = "%.2f".format(value),
                                     style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                             }
                         }
@@ -163,31 +173,32 @@ fun SafetyReasonsBottomSheet(
             // Recommended Action Banner
             Spacer(modifier = Modifier.height(20.dp))
             Surface(
-                color = MaterialTheme.colorScheme.secondaryContainer,
-                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                shape = RoundedCornerShape(10.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
-                    modifier = Modifier.padding(16.dp),
+                    modifier = Modifier.padding(14.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Gavel,
                         contentDescription = "Recommended Action",
-                        tint = MaterialTheme.colorScheme.onSecondaryContainer
+                        tint = MaterialTheme.colorScheme.primary
                     )
-                    Spacer(modifier = Modifier.width(16.dp))
+                    Spacer(modifier = Modifier.width(14.dp))
                     Column {
                         Text(
                             text = "Recommended Policy Action",
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                            color = MaterialTheme.colorScheme.outline
                         )
                         Text(
                             text = safety.recommended_action.uppercase(),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
@@ -205,6 +216,7 @@ fun SafetyReasonsBottomSheet(
                         onBlockUser(message.sender_id)
                         onDismiss()
                     },
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                     modifier = Modifier.weight(1f)
                 ) {
                     Icon(
