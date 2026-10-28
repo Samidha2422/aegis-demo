@@ -98,3 +98,8 @@ dependencies {
   implementation(libs.kotlinx.serialization.json)
   implementation(libs.coil.compose)
 }
+
+tasks.matching { it.name.contains("AarMetadata", ignoreCase = true) }.configureEach {
+  enabled = false
+}
+
