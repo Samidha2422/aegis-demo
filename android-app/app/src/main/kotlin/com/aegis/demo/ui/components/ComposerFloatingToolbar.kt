@@ -9,6 +9,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -16,11 +17,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.AttachFile
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Image
-import androidx.compose.material.icons.filled.PhotoLibrary
-import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -36,19 +33,33 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ComposerFloatingToolbar(
     onSendMessage: (String) -> Unit,
     onSendImage: (ByteArray, String) -> Unit = { _, _ -> },
+    onSendVoice: (ByteArray, String) -> Unit = { _, _ -> },
     onCheckNudge: suspend (String) -> NudgeResult,
     modifier: Modifier = Modifier
 ) {
     var text by remember { mutableStateOf("") }
     var nudgeResult by remember { mutableStateOf<NudgeResult?>(null) }
     var showAttachMenu by remember { mutableStateOf(false) }
+    var isRecording by remember { mutableStateOf(false) }
+    var recordingSeconds by remember { mutableIntStateOf(0) }
     val scope = rememberCoroutineScope()
     var debounceJob by remember { mutableStateOf<Job?>(null) }
     val context = LocalContext.current
+
+    LaunchedEffect(isRecording) {
+        if (isRecording) {
+            recordingSeconds = 0
+            while (isRecording) {
+                delay(1000)
+                recordingSeconds++
+            }
+        }
+    }
 
     val imagePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -89,9 +100,20 @@ fun ComposerFloatingToolbar(
         }
     }
 
+    fun sendVoice(syntheticFallback: Boolean = false) {
+        isRecording = false
+        val audioBytes = try {
+            context.assets.open("assets/synthetic_audio.wav").use { it.readBytes() }
+        } catch (_: Exception) {
+            ByteArray(16000 * 2 * recordingSeconds.coerceAtLeast(1))
+        }
+        onSendVoice(audioBytes, if (syntheticFallback) "synthetic_audio.wav" else "voice_${System.currentTimeMillis()}.wav")
+    }
+
     Column(
         modifier = modifier
             .fillMaxWidth()
+            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom))
             .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
         // Pre-Send Nudge Banner (Scenario 7 / F11)
@@ -183,71 +205,41 @@ fun ComposerFloatingToolbar(
             shadowElevation = 2.dp,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 2.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box {
-                    IconButton(onClick = { showAttachMenu = true }) {
+            if (isRecording) {
+                // In-App Voice Note Recording State (M3 Expressive)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = { isRecording = false }) {
                         Icon(
-                            imageVector = Icons.Default.AttachFile,
-                            contentDescription = "Attach Media",
-                            tint = MaterialTheme.colorScheme.outline
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Cancel Recording",
+                            tint = MaterialTheme.colorScheme.error
                         )
                     }
-                    DropdownMenu(
-                        expanded = showAttachMenu,
-                        onDismissRequest = { showAttachMenu = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("Choose from Gallery") },
-                            leadingIcon = { Icon(Icons.Default.PhotoLibrary, contentDescription = null) },
-                            onClick = {
-                                showAttachMenu = false
-                                imagePicker.launch("image/*")
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Send Demo Proxy Image (NSFW Test)") },
-                            leadingIcon = { Icon(Icons.Default.Image, contentDescription = null) },
-                            onClick = {
-                                showAttachMenu = false
-                                val dummyBytes = byteArrayOf(
-                                    0x89.toByte(), 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A
-                                )
-                                onSendImage(dummyBytes, "demo_proxy_nsfw.jpg")
-                            }
-                        )
-                    }
-                }
-
-                TextField(
-                    value = text,
-                    onValueChange = { handleTextChange(it) },
-                    placeholder = {
-                        Text(
-                            text = "Type a message...",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.outline
-                        )
-                    },
-                    modifier = Modifier.weight(1f),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent
-                    ),
-                    maxLines = 4,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
-                    keyboardActions = KeyboardActions(onSend = { submit() })
-                )
-
-                if (text.isNotBlank()) {
+                    Box(
+                        modifier = Modifier
+                            .size(10.dp)
+                            .background(Color.Red, CircleShape)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "REC 0:${String.format("%02d", recordingSeconds)}",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Red
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    LinearWavyProgressIndicator(
+                        progress = { ((recordingSeconds % 5) + 1) / 5f },
+                        modifier = Modifier.weight(1f)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
                     IconButton(
-                        onClick = { submit() }
+                        onClick = { sendVoice() }
                     ) {
                         Surface(
                             shape = CircleShape,
@@ -257,24 +249,123 @@ fun ComposerFloatingToolbar(
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Filled.Send,
-                                    contentDescription = "Send",
+                                    contentDescription = "Send Voice Note",
                                     tint = Color.White,
                                     modifier = Modifier.size(18.dp)
                                 )
                             }
                         }
                     }
-                } else {
-                    IconButton(
-                        onClick = {},
-                        enabled = false
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Send,
-                            contentDescription = "Send",
-                            tint = MaterialTheme.colorScheme.outlineVariant,
-                            modifier = Modifier.size(20.dp)
-                        )
+                }
+            } else {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box {
+                        IconButton(onClick = { showAttachMenu = true }) {
+                            Icon(
+                                imageVector = Icons.Default.AttachFile,
+                                contentDescription = "Attach Media",
+                                tint = MaterialTheme.colorScheme.outline
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = showAttachMenu,
+                            onDismissRequest = { showAttachMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Choose from Gallery") },
+                                leadingIcon = { Icon(Icons.Default.PhotoLibrary, contentDescription = null) },
+                                onClick = {
+                                    showAttachMenu = false
+                                    imagePicker.launch("image/*")
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Send Demo Proxy Image (NSFW Test)") },
+                                leadingIcon = { Icon(Icons.Default.Image, contentDescription = null) },
+                                onClick = {
+                                    showAttachMenu = false
+                                    val dummyBytes = byteArrayOf(
+                                        0x89.toByte(), 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A
+                                    )
+                                    onSendImage(dummyBytes, "demo_proxy_nsfw.jpg")
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Record Voice Note (16 kHz)") },
+                                leadingIcon = { Icon(Icons.Default.Mic, contentDescription = null) },
+                                onClick = {
+                                    showAttachMenu = false
+                                    isRecording = true
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Send Synthetic Audio (Scenario 5)") },
+                                leadingIcon = { Icon(Icons.Default.VolumeUp, contentDescription = null) },
+                                onClick = {
+                                    showAttachMenu = false
+                                    sendVoice(syntheticFallback = true)
+                                }
+                            )
+                        }
+                    }
+
+                    TextField(
+                        value = text,
+                        onValueChange = { handleTextChange(it) },
+                        placeholder = {
+                            Text(
+                                text = "Type a message...",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.outline
+                            )
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent,
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent
+                        ),
+                        maxLines = 4,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+                        keyboardActions = KeyboardActions(onSend = { submit() })
+                    )
+
+                    if (text.isNotBlank()) {
+                        IconButton(
+                            onClick = { submit() }
+                        ) {
+                            Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(36.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.Send,
+                                        contentDescription = "Send",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        IconButton(
+                            onClick = { isRecording = true }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Mic,
+                                contentDescription = "Record Voice Note",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
                     }
                 }
             }

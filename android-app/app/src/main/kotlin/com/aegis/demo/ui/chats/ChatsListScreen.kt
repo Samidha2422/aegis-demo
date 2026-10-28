@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import com.aegis.demo.data.model.ChatThread
 import com.aegis.demo.di.ServiceLocator
 import com.aegis.demo.ui.theme.SafetyTheme
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,9 +34,14 @@ fun ChatsListScreen(
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val repository = remember { ServiceLocator.getRepository() }
+    val repository by ServiceLocator.repository.collectAsState()
     val chats by repository.getChats().collectAsState(initial = emptyList())
     val activePersona by repository.getActivePersona().collectAsState()
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(repository) {
+        repository.refresh()
+    }
 
     val totalHeld = chats.sumOf { it.held_count }
 
@@ -64,6 +70,13 @@ fun ChatsListScreen(
                         titleContentColor = MaterialTheme.colorScheme.onSurface
                     ),
                     actions = {
+                        IconButton(onClick = { scope.launch { repository.refresh() } }) {
+                            Icon(
+                                imageVector = Icons.Outlined.Refresh,
+                                contentDescription = "Refresh Inbox",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                         IconButton(onClick = onOpenDirector) {
                             Icon(
                                 imageVector = Icons.Outlined.PlayCircle,
@@ -133,6 +146,12 @@ fun ChatsListScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.outline
                     )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(onClick = { scope.launch { repository.refresh() } }) {
+                        Icon(Icons.Outlined.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Refresh Inbox")
+                    }
                 }
             }
         } else {

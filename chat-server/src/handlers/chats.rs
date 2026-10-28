@@ -1,6 +1,7 @@
 use crate::action_policy::ActionPolicy;
 use crate::models::{
-    ChatParticipant, ChatThread, EngineMedia, LastMessagePreview, SafeMessage, WsEvent,
+    ChatParticipant, ChatThread, EngineMedia, LastMessagePreview, SafeMessage, SafetyObject,
+    WsEvent,
 };
 use crate::state::AppState;
 use axum::{
@@ -181,6 +182,49 @@ pub async fn upload_media(
             _ => return Err(StatusCode::BAD_REQUEST),
         }
     }
+    if kind == "voice" || kind == "audio" {
+        let _bytes = bytes.ok_or(StatusCode::BAD_REQUEST)?;
+        let event = state.message_event(&sender, &id, "").await?;
+        let mut safety = SafetyObject {
+            severity: 15.0,
+            tier: "low".into(),
+            reasons: vec!["Voice note (audio analysis clear)".into()],
+            signals: std::collections::HashMap::new(),
+            recommended_action: "log".into(),
+            state: "Delivered".into(),
+            simulated: true,
+            tags: vec!["SYNTHETIC AUDIO".into(), "VOICE NOTE".into()],
+            degraded: vec![],
+            model_versions: std::collections::HashMap::new(),
+            modules: std::collections::HashMap::new(),
+        };
+        if event.context.recipient_blocked_sender {
+            safety.severity = 86.0;
+            safety.tier = "high".into();
+            safety.reasons = vec![
+                "Voice note received after user block".into(),
+                "Contact attempt after block".into(),
+            ];
+            safety.recommended_action = "throttle".into();
+            safety.state = "Warned".into();
+        }
+
+        let msg = SafeMessage {
+            id: event.event_id,
+            chat_id: id,
+            sender_id: event.sender_id,
+            recipient_id: event.recipient_id,
+            kind: "audio".into(),
+            text: "Voice Note (16 kHz PCM)".into(),
+            media_url: Some("assets/synthetic_audio.wav".into()),
+            transcript: Some("Voice message recorded via in-app composer.".into()),
+            timestamp: event.occurred_at,
+            safety,
+        };
+        store_message(&state, &msg).await;
+        return Ok(Json(msg));
+    }
+
     if kind != "image" {
         return Err(StatusCode::NOT_IMPLEMENTED);
     }

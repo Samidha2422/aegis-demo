@@ -99,7 +99,11 @@ fun FeedScreen(
             }
         },
         bottomBar = {
-            Column {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom))
+            ) {
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
                 Surface(
                     color = MaterialTheme.colorScheme.surface,

@@ -41,7 +41,15 @@ class FixtureRepository : ChatRepository {
             ChatThread(
                 id = "chat_ishaan",
                 participant = ChatParticipant("ishaan", "Ishaan Verma", "assets/avatars/ishaan.png", is_contact = true),
-                last_message = LastMessagePreview("msg_i10", "ishaan", "See you tonight at dinner!", "09:30 AM", "low"),
+                last_message = LastMessagePreview("msg_i10", "ishaan", "Perfect, table is already booked. See you tonight!", "09:30 AM", "low"),
+                unread_count = 0,
+                held_count = 0,
+                max_tier = "low"
+            ),
+            ChatThread(
+                id = "chat_diya",
+                participant = ChatParticipant("diya", "Diya Sen", "assets/avatars/diya.png", is_contact = true),
+                last_message = LastMessagePreview("msg_d07", "diya", "Saturday 11 AM at our spot. Can't wait!", "10:05 AM", "low"),
                 unread_count = 0,
                 held_count = 0,
                 max_tier = "low"
@@ -137,9 +145,170 @@ class FixtureRepository : ChatRepository {
             )
         )
 
+        val ishaanMessages = listOf(
+            SafeMessage(
+                id = "msg_i01",
+                chat_id = "chat_ishaan",
+                sender_id = "meera",
+                recipient_id = "ishaan",
+                text = "Morning! Are you heading to the office soon?",
+                timestamp = "08:30 AM",
+                safety = SafetyObject(0f, "low", emptyList(), state = "Delivered")
+            ),
+            SafeMessage(
+                id = "msg_i02",
+                chat_id = "chat_ishaan",
+                sender_id = "ishaan",
+                recipient_id = "meera",
+                text = "Leaving in 10 mins. Want me to grab coffee?",
+                timestamp = "08:35 AM",
+                safety = SafetyObject(0f, "low", emptyList(), state = "Delivered")
+            ),
+            SafeMessage(
+                id = "msg_i03",
+                chat_id = "chat_ishaan",
+                sender_id = "meera",
+                recipient_id = "ishaan",
+                text = "Oat latte from the corner cafe please!",
+                timestamp = "08:38 AM",
+                safety = SafetyObject(0f, "low", emptyList(), state = "Delivered")
+            ),
+            SafeMessage(
+                id = "msg_i04",
+                chat_id = "chat_ishaan",
+                sender_id = "ishaan",
+                recipient_id = "meera",
+                text = "You got it! See you at 10.",
+                timestamp = "08:40 AM",
+                safety = SafetyObject(0f, "low", emptyList(), state = "Delivered")
+            ),
+            SafeMessage(
+                id = "msg_i05",
+                chat_id = "chat_ishaan",
+                sender_id = "meera",
+                recipient_id = "ishaan",
+                text = "Thanks so much, you're the best!",
+                timestamp = "09:00 AM",
+                safety = SafetyObject(0f, "low", emptyList(), state = "Delivered")
+            ),
+            SafeMessage(
+                id = "msg_i06",
+                chat_id = "chat_ishaan",
+                sender_id = "ishaan",
+                recipient_id = "meera",
+                text = "Haha of course! How's the user research doc?",
+                timestamp = "09:10 AM",
+                safety = SafetyObject(0f, "low", emptyList(), state = "Delivered")
+            ),
+            SafeMessage(
+                id = "msg_i07",
+                chat_id = "chat_ishaan",
+                sender_id = "meera",
+                recipient_id = "ishaan",
+                text = "Almost done, findings look really positive.",
+                timestamp = "09:15 AM",
+                safety = SafetyObject(0f, "low", emptyList(), state = "Delivered")
+            ),
+            SafeMessage(
+                id = "msg_i08",
+                chat_id = "chat_ishaan",
+                sender_id = "ishaan",
+                recipient_id = "meera",
+                text = "Nice! Still good for dinner tonight?",
+                timestamp = "09:20 AM",
+                safety = SafetyObject(0f, "low", emptyList(), state = "Delivered")
+            ),
+            SafeMessage(
+                id = "msg_i09",
+                chat_id = "chat_ishaan",
+                sender_id = "meera",
+                recipient_id = "ishaan",
+                text = "Yes! 8pm at the Italian place?",
+                timestamp = "09:25 AM",
+                safety = SafetyObject(0f, "low", emptyList(), state = "Delivered")
+            ),
+            SafeMessage(
+                id = "msg_i10",
+                chat_id = "chat_ishaan",
+                sender_id = "ishaan",
+                recipient_id = "meera",
+                text = "Perfect, table is already booked. See you tonight!",
+                timestamp = "09:30 AM",
+                safety = SafetyObject(0f, "low", emptyList(), state = "Delivered")
+            )
+        )
+
+        val diyaMessages = listOf(
+            SafeMessage(
+                id = "msg_d01",
+                chat_id = "chat_diya",
+                sender_id = "diya",
+                recipient_id = "meera",
+                text = "Meera!! Did you see the research acceptance email?!",
+                timestamp = "Yesterday",
+                safety = SafetyObject(0f, "low", emptyList(), state = "Delivered")
+            ),
+            SafeMessage(
+                id = "msg_d02",
+                chat_id = "chat_diya",
+                sender_id = "meera",
+                recipient_id = "diya",
+                text = "OMG YES! I couldn't believe it when I saw it!",
+                timestamp = "Yesterday",
+                safety = SafetyObject(0f, "low", emptyList(), state = "Delivered")
+            ),
+            SafeMessage(
+                id = "msg_d03",
+                chat_id = "chat_diya",
+                sender_id = "diya",
+                recipient_id = "meera",
+                text = "So well deserved!! The design system research was incredible.",
+                timestamp = "Yesterday",
+                safety = SafetyObject(0f, "low", emptyList(), state = "Delivered")
+            ),
+            SafeMessage(
+                id = "msg_d04",
+                chat_id = "chat_diya",
+                sender_id = "meera",
+                recipient_id = "diya",
+                text = "Couldn't have done it without your data help, honestly.",
+                timestamp = "Yesterday",
+                safety = SafetyObject(0f, "low", emptyList(), state = "Delivered")
+            ),
+            SafeMessage(
+                id = "msg_d05",
+                chat_id = "chat_diya",
+                sender_id = "diya",
+                recipient_id = "meera",
+                text = "Team effort! We have to celebrate this weekend.",
+                timestamp = "Yesterday",
+                safety = SafetyObject(0f, "low", emptyList(), state = "Delivered")
+            ),
+            SafeMessage(
+                id = "msg_d06",
+                chat_id = "chat_diya",
+                sender_id = "meera",
+                recipient_id = "diya",
+                text = "Definitely! Saturday brunch?",
+                timestamp = "10:00 AM",
+                safety = SafetyObject(0f, "low", emptyList(), state = "Delivered")
+            ),
+            SafeMessage(
+                id = "msg_d07",
+                chat_id = "chat_diya",
+                sender_id = "diya",
+                recipient_id = "meera",
+                text = "Saturday 11 AM at our spot. Can't wait!",
+                timestamp = "10:05 AM",
+                safety = SafetyObject(0f, "low", emptyList(), state = "Delivered")
+            )
+        )
+
         _messages.value = mapOf(
             "chat_rohan" to rohanMessages,
-            "chat_stranger" to strangerMessages
+            "chat_stranger" to strangerMessages,
+            "chat_ishaan" to ishaanMessages,
+            "chat_diya" to diyaMessages
         )
 
         // Seed Calls (Scenario 6)
@@ -274,8 +443,65 @@ class FixtureRepository : ChatRepository {
         return Result.success(msg)
     }
 
+    override suspend fun sendVoiceNote(chatId: String, audioBytes: ByteArray, filename: String): Result<SafeMessage> {
+        val msg = SafeMessage(
+            id = "msg_${UUID.randomUUID()}",
+            chat_id = chatId,
+            sender_id = _activePersona.value?.id ?: "meera",
+            recipient_id = chatId.removePrefix("chat_"),
+            kind = "audio",
+            text = "Voice Note (${audioBytes.size} bytes)",
+            media_url = "assets/synthetic_audio.wav",
+            transcript = "Voice note recorded and analyzed by Aegis Engine.",
+            timestamp = "Just now",
+            safety = SafetyObject(
+                severity = 15f,
+                tier = "low",
+                reasons = listOf("Voice note acoustic features within benign boundaries"),
+                signals = mapOf("audio_toxicity" to 0.12f),
+                recommended_action = "log",
+                state = "Delivered",
+                simulated = true,
+                tags = listOf("SYNTHETIC AUDIO", "VOICE NOTE")
+            )
+        )
+        val current = _messages.value.toMutableMap()
+        val list = (current[chatId] ?: emptyList()).toMutableList()
+        list.add(msg)
+        current[chatId] = list
+        _messages.value = current
+        return Result.success(msg)
+    }
+
     override suspend fun checkNudge(draft: String, chatId: String): NudgeResult {
         val lower = draft.lowercase()
+        val isFriend = chatId in listOf("chat_ishaan", "chat_diya")
+        val isTeasingBanter = (lower.contains("idiot") || lower.contains("crazy") || lower.contains("annoying")) &&
+                (lower.contains("lol") || lower.contains("haha") || lower.contains("why are you"))
+
+        if (isFriend && isTeasingBanter) {
+            // Reciprocal contact caps contextual risk (Healthy Reciprocity)
+            return NudgeResult(
+                severity = 28f,
+                tier = "low",
+                reasons = listOf("Reciprocal contact caps contextual risk (Healthy Reciprocity)"),
+                recommended_action = "allow",
+                nudge_text = null,
+                simulated = true
+            )
+        }
+
+        val matchingSlang = confirmedSlangTerms.firstOrNull { lower.contains(it) }
+        if (matchingSlang != null) {
+            return NudgeResult(
+                severity = 86f,
+                tier = "high",
+                reasons = listOf("Draft contains confirmed community slang term: '$matchingSlang'"),
+                recommended_action = "warn_sender",
+                nudge_text = "This message contains confirmed community harassment slang ('$matchingSlang'). Please revise."
+            )
+        }
+
         val isAbusive = lower.contains("idiot") || lower.contains("pathetic") || lower.contains("hate you")
         return if (isAbusive) {
             NudgeResult(
@@ -337,24 +563,91 @@ class FixtureRepository : ChatRepository {
 
     override fun getCalls(): Flow<List<CallRecord>> = _calls.asStateFlow()
 
-    override suspend fun simulateCall(callerId: String) {
+    override suspend fun simulateCall(
+        callerId: String,
+        durationSecs: Int,
+        status: String,
+        transcript: String?
+    ): Result<CallRecord> {
+        val hasAggressive = transcript?.contains("Pick up", ignoreCase = true) == true ||
+                transcript?.contains("threat", ignoreCase = true) == true ||
+                transcript?.contains("ignore", ignoreCase = true) == true
+        val score = if (hasAggressive) 88f else 18f
         val newCall = CallRecord(
             id = "call_sim_${UUID.randomUUID()}",
             caller_id = callerId,
             callee_id = "meera",
             timestamp = "Just now",
-            status = "missed",
+            duration_secs = durationSecs,
+            status = status,
             safety = SafetyObject(
-                severity = 80f,
-                tier = "high",
-                reasons = listOf("Pattern matches harassing frequency", "Simulated incoming call"),
-                recommended_action = "throttle",
-                state = "Escalated",
+                severity = score,
+                tier = if (score >= 70f) "high" else "low",
+                reasons = if (hasAggressive) {
+                    listOf("Hostile voice transcript pattern", "Quiet-hour repeated attempt spike")
+                } else {
+                    listOf("Benign call pattern")
+                },
+                recommended_action = if (hasAggressive) "throttle" else "allow",
+                state = if (hasAggressive) "Escalated" else "Delivered",
                 simulated = true,
                 tags = listOf("SIMULATED CALL")
-            )
+            ),
+            transcript = transcript
         )
         _calls.value = listOf(newCall) + _calls.value
+        return Result.success(newCall)
+    }
+
+    private val confirmedSlangTerms = mutableSetOf<String>()
+
+    override suspend fun confirmSlangTerm(term: String): Result<Boolean> {
+        confirmedSlangTerms.add(term.lowercase().trim())
+        return Result.success(true)
+    }
+
+    override suspend fun importCallLogCsv(csvText: String): Result<List<CallRecord>> {
+        val lines = csvText.lines().map { it.trim() }.filter { it.isNotEmpty() }
+        if (lines.isEmpty()) return Result.failure(IllegalArgumentException("Empty CSV"))
+        val rows = if (lines[0].startsWith("call_id")) lines.drop(1) else lines
+        val parsed = rows.mapIndexed { idx, line ->
+            val cols = line.split(",").map { it.trim() }
+            val caller = cols.getOrNull(1) ?: "unknown_stalker"
+            val callee = cols.getOrNull(2) ?: "meera"
+            val rawTs = cols.getOrNull(3) ?: "02:00 AM"
+            val ts = if (rawTs.contains("T")) {
+                val timePart = rawTs.substringAfter("T").substringBefore("Z")
+                val hourMin = timePart.split(":")
+                val h = hourMin.getOrNull(0)?.toIntOrNull() ?: 2
+                val m = hourMin.getOrNull(1) ?: "00"
+                String.format("%02d:%s AM", h, m)
+            } else rawTs
+            val dur = cols.getOrNull(4)?.toIntOrNull() ?: 0
+            val stat = cols.getOrNull(5) ?: "missed"
+            CallRecord(
+                id = "call_imported_$idx",
+                caller_id = caller,
+                callee_id = callee,
+                timestamp = ts,
+                duration_secs = dur,
+                status = stat,
+                safety = SafetyObject(
+                    severity = 94f,
+                    tier = "high",
+                    reasons = listOf(
+                        "CSV Call Log: 40 calls overnight, 92% unanswered",
+                        "Quiet-hour repeated attempt spike (02:00-04:00 AM)"
+                    ),
+                    recommended_action = "throttle",
+                    state = "Escalated",
+                    simulated = true,
+                    tags = listOf("IMPORTED CSV", "SIMULATED CALL LOG")
+                ),
+                transcript = if (stat == "answered" && dur > 0) "Hello? Why do you keep calling me in the middle of the night?" else null
+            )
+        }
+        _calls.value = parsed + _calls.value
+        return Result.success(parsed)
     }
 
     override fun getAlerts(): Flow<List<AlertItem>> = _alerts.asStateFlow()

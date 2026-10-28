@@ -30,7 +30,7 @@ import com.aegis.demo.ui.components.SafetyReasonsBottomSheet
 import com.aegis.demo.ui.theme.SafetyTheme
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class, ExperimentalLayoutApi::class)
 @Composable
 fun ChatScreen(
     chatId: String,
@@ -58,7 +58,8 @@ fun ChatScreen(
     var showMenu by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
 
-    LaunchedEffect(messages.size) {
+    val isImeVisible = WindowInsets.isImeVisible
+    LaunchedEffect(messages.size, isImeVisible) {
         if (messages.isNotEmpty()) {
             listState.animateScrollToItem(messages.size - 1)
         }
@@ -91,35 +92,43 @@ fun ChatScreen(
                                 }
                             }
                             Spacer(modifier = Modifier.width(12.dp))
-                            Column {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
                                     Text(
                                         text = currentChat.participant.name,
                                         style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.SemiBold,
+                                        fontWeight = FontWeight.Bold,
                                         maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.weight(1f, fill = false)
                                     )
                                     if (currentChat.participant.is_blocked) {
-                                        Spacer(modifier = Modifier.width(8.dp))
                                         Surface(
                                             shape = RoundedCornerShape(4.dp),
-                                            color = MaterialTheme.colorScheme.error
+                                            color = MaterialTheme.colorScheme.errorContainer,
+                                            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.4f))
                                         ) {
                                             Text(
                                                 text = "BLOCKED",
                                                 style = MaterialTheme.typography.labelSmall,
-                                                fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.onError,
-                                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                                fontWeight = FontWeight.ExtraBold,
+                                                color = MaterialTheme.colorScheme.error,
+                                                softWrap = false,
+                                                maxLines = 1,
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                             )
                                         }
                                     }
                                 }
                                 Text(
-                                    text = if (currentChat.participant.is_blocked) "Blocked" else "Active now",
+                                    text = if (currentChat.participant.is_blocked) "Contact blocked • Auto-protection active" else "Active now",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = if (currentChat.participant.is_blocked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
                         }
@@ -213,6 +222,11 @@ fun ChatScreen(
                         repository.sendImage(chatId, bytes, filename)
                     }
                 },
+                onSendVoice = { bytes, filename ->
+                    scope.launch {
+                        repository.sendVoiceNote(chatId, bytes, filename)
+                    }
+                },
                 onCheckNudge = { draft ->
                     repository.checkNudge(draft, chatId)
                 }
@@ -226,55 +240,75 @@ fun ChatScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Pinned Risk Status Banner: STRICTLY ONLY when high risk breach (>= 70)
+            // Refined M3 Expressive Risk Status Banner (Clean Card & LinearWavyProgressIndicator)
             if (hasHighRiskBreach) {
+                val maxSeverity = messages.maxOfOrNull { it.safety.severity } ?: 88f
                 Surface(
-                    color = SafetyTheme.highRiskContainer,
+                    color = MaterialTheme.colorScheme.surface,
                     border = androidx.compose.foundation.BorderStroke(1.dp, SafetyTheme.highRiskBorder),
-                    modifier = Modifier.fillMaxWidth()
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
                 ) {
-                    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                    Column(modifier = Modifier.padding(12.dp)) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = Icons.Default.Shield,
-                                    contentDescription = null,
-                                    tint = SafetyTheme.highRisk,
-                                    modifier = Modifier.size(16.dp)
-                                )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Surface(
+                                    shape = CircleShape,
+                                    color = SafetyTheme.highRiskContainer,
+                                    modifier = Modifier.size(24.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            imageVector = Icons.Default.Shield,
+                                            contentDescription = null,
+                                            tint = SafetyTheme.highRisk,
+                                            modifier = Modifier.size(14.dp)
+                                        )
+                                    }
+                                }
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = "HARASSMENT THRESHOLD BREACHED (88/100)",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = SafetyTheme.onHighRiskContainer
-                                )
+                                Column {
+                                    Text(
+                                        text = "High Harassment Risk Detected",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = "Threat severity: ${maxSeverity.toInt()}/100 • Automated shielding",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
-                            TextButton(
+                            OutlinedButton(
                                 onClick = onOpenSafetyCenter,
-                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, SafetyTheme.highRisk.copy(alpha = 0.5f))
                             ) {
                                 Text(
                                     text = "Details",
                                     style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.SemiBold,
+                                    fontWeight = FontWeight.Bold,
                                     color = SafetyTheme.highRisk
                                 )
                             }
                         }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        LinearProgressIndicator(
-                            progress = { 0.88f },
+                        Spacer(modifier = Modifier.height(10.dp))
+                        LinearWavyProgressIndicator(
+                            progress = { (maxSeverity / 100f).coerceIn(0.1f, 1f) },
                             color = SafetyTheme.highRisk,
                             trackColor = SafetyTheme.highRiskContainer,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(6.dp)
-                                .clip(RoundedCornerShape(3.dp))
+                            modifier = Modifier.fillMaxWidth()
                         )
                     }
                 }

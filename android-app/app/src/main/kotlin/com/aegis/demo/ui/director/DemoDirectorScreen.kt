@@ -396,6 +396,119 @@ fun DemoDirectorScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
             }
+
+            // Adaptive Community Slang Loop (F10 / Scenario 8)
+            item {
+                var isSlangConfirmed by remember { mutableStateOf(false) }
+
+                Text(
+                    text = "Adaptive Slang Loop (F10 / Scenario 8)",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "Zero-shot adaptation to newly emerging code-words via community moderation.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Target Slang: \"vexling\"",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Surface(
+                                shape = RoundedCornerShape(4.dp),
+                                color = if (isSlangConfirmed) SafetyTheme.highRiskContainer else SafetyTheme.lowRiskContainer,
+                                border = BorderStroke(1.dp, if (isSlangConfirmed) SafetyTheme.highRiskBorder else SafetyTheme.lowRiskBorder)
+                            ) {
+                                Text(
+                                    text = if (isSlangConfirmed) "CONFIRMED HARASSMENT" else "UNRECOGNIZED TERM",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isSlangConfirmed) SafetyTheme.highRisk else SafetyTheme.lowRisk,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = "Draft phrase: \"Stop vexling me in the hallway, you creep\"",
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.padding(8.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text(
+                                    text = if (isSlangConfirmed) "Risk Score: 86 / 100 (HIGH)" else "Risk Score: 12 / 100 (LOW)",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = if (isSlangConfirmed) SafetyTheme.highRisk else MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = if (isSlangConfirmed) "Flagged: confirmed community slang term 'vexling'" else "Evades standard keyword blacklist",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+
+                            if (!isSlangConfirmed) {
+                                FilledTonalButton(
+                                    onClick = {
+                                        scope.launch {
+                                            repository.confirmSlangTerm("vexling")
+                                            isSlangConfirmed = true
+                                        }
+                                    },
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+                                ) {
+                                    Icon(Icons.Default.Verified, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("Mod Asha Confirms")
+                                }
+                            } else {
+                                TextButton(
+                                    onClick = { isSlangConfirmed = false },
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
+                                ) {
+                                    Text("Reset Slang")
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+            }
         }
     }
 }

@@ -32,6 +32,11 @@ async fn main() -> anyhow::Result<()> {
         .allow_methods(Any)
         .allow_headers(Any);
 
+    let state_seed = state.clone();
+    tokio::spawn(async move {
+        state_seed.seed_engine_history().await;
+    });
+
     let app = Router::new()
         .route("/engine/status", get(handlers::moderation::engine_status))
         // Auth & Personas

@@ -420,7 +420,7 @@ fun SafeMessageBubble(
                     }
 
                     Text(
-                        text = message.timestamp,
+                        text = formatMessageTimestamp(message.timestamp),
                         style = MaterialTheme.typography.labelSmall,
                         color = timestampColor
                     )
@@ -486,3 +486,17 @@ private fun SafetyStateHeader(
 }
 
 private data class Quintuple<A, B, C, D, E>(val first: A, val second: B, val third: C, val fourth: D, val fifth: E)
+
+private fun formatMessageTimestamp(raw: String): String {
+    return try {
+        val dt = java.time.Instant.parse(raw).atZone(java.time.ZoneId.systemDefault())
+        val formatter = java.time.format.DateTimeFormatter.ofPattern("hh:mm a")
+        formatter.format(dt)
+    } catch (_: Exception) {
+        if (raw.contains("T")) {
+            raw.substringAfter("T").take(5)
+        } else {
+            raw
+        }
+    }
+}

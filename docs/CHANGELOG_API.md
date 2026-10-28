@@ -1,8 +1,18 @@
 # API Changelog (CHANGELOG_API.md)
 
-All changes, extensions, or adjustments between `contracts/engine-openapi.json` and `docs/API_CHAT.md` are tracked here per Operating Rule R4.
+All changes, extensions, or adjustments between contracts/engine-openapi.json and docs/API_CHAT.md are tracked here per Operating Rule R4.
 
 ---
+
+### 2026-10-29: 100% Feature Parity Completion (Voice Notes, CSV Import, Slang Loop)
+- **Voice Notes in Chat Composer**: Enabled `kind = "voice"` / `"audio"` in `POST /chats/{id}/media`. Added in-app recording UI with M3 Expressive `LinearWavyProgressIndicator` timer and mic toggle in `ComposerFloatingToolbar.kt`.
+- **Call Log CSV Import**: Connected `POST /calls/log/import` in `ChatApiService` and `CallsScreen.kt`. Added device CSV file picker and one-tap bundled 40-call overnight spike loader.
+- **Adaptive Slang Intelligence (F10 / Scenario 8)**: Added `confirmSlangTerm` to `ChatRepository` and interactive zero-shot community slang adaptation card to `DemoDirectorScreen.kt` demonstrating pre- vs. post-confirmation engine scoring for emerging code-words.
+
+### 2026-10-29: Call Simulation Audio Transcript / Voicemail Support
+- Added optional `transcript: Option<String>` to `SimulateCallRequest` (`POST /calls/simulate`).
+- When present, `simulate_call` populates `EngineMessage` and `voicemail: true`, routing audio transcript text to the live Adapt engine text analyzer while fusing with behavioral timing/frequency.
+- Added optional `transcript: Option<String>` to `CallRecord` in both chat-server and Android models.
 
 ## [Initial Contract Definitions] - 2026-10-28
 

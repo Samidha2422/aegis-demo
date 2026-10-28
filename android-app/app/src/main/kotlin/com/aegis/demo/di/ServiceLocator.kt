@@ -17,10 +17,33 @@ import retrofit2.Retrofit
 import java.util.concurrent.TimeUnit
 
 object ServiceLocator {
+    private fun isEmulator(): Boolean {
+        val fingerprint = android.os.Build.FINGERPRINT
+        val model = android.os.Build.MODEL
+        val manufacturer = android.os.Build.MANUFACTURER
+        val brand = android.os.Build.BRAND
+        val device = android.os.Build.DEVICE
+        val product = android.os.Build.PRODUCT
+        val hardware = android.os.Build.HARDWARE
+        return (fingerprint.startsWith("generic")
+                || model.contains("google_sdk")
+                || model.contains("Emulator")
+                || model.contains("Android SDK built for x86")
+                || manufacturer.contains("Genymotion")
+                || hardware.contains("goldfish")
+                || hardware.contains("ranchu")
+                || product.contains("sdk_gphone")
+                || product.contains("vbox86p")
+                || (brand.startsWith("generic") && device.startsWith("generic"))
+                || "google_sdk" == product)
+    }
+
+    private fun defaultUrl(): String = if (isEmulator()) "http://10.0.2.2:8081/" else "http://127.0.0.1:8081/"
+
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
     private val _isReplayMode = MutableStateFlow(false)
     val isReplayMode: StateFlow<Boolean> = _isReplayMode.asStateFlow()
-    private val _baseUrl = MutableStateFlow("http://10.0.2.2:8081/")
+    private val _baseUrl = MutableStateFlow(defaultUrl())
     val baseUrl: StateFlow<String> = _baseUrl.asStateFlow()
     private var preferences: android.content.SharedPreferences? = null
     private val fixtureRepository = FixtureRepository()
@@ -36,7 +59,13 @@ object ServiceLocator {
 
     fun initialize(context: Context) {
         preferences = context.applicationContext.getSharedPreferences("connection", Context.MODE_PRIVATE)
-        preferences?.getString("chat_url", null)?.let { setBaseUrl(it) }
+        val saved = preferences?.getString("chat_url", null)
+        val initialUrl = if (saved == null || (!isEmulator() && saved.contains("10.0.2.2")) || saved.contains(":8080")) {
+            defaultUrl()
+        } else {
+            saved
+        }
+        setBaseUrl(initialUrl)
         setReplayMode(preferences?.getBoolean("replay", false) ?: false)
     }
 

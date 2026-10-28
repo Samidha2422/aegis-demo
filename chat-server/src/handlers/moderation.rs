@@ -313,7 +313,7 @@ mod tests {
             .unwrap();
         assert!(!outgoing.context.recipient_blocked_sender);
         assert!(incoming.context.recipient_blocked_sender);
-        assert!(state.chats.read().await.is_empty());
+        assert!(!state.chats.read().await.contains_key("chat_rohan"));
         assert!(state.alerts.read().await.is_empty());
     }
 }

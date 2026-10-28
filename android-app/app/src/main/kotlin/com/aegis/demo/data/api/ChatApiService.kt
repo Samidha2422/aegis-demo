@@ -61,6 +61,9 @@ interface ChatApiService {
     @POST("calls/simulate")
     suspend fun simulateCall(@Body body: Map<String, String>): CallRecord
 
+    @POST("calls/log/import")
+    suspend fun importCallLog(@Body body: RequestBody): Response<Unit>
+
     @GET("demo/baseline")
     suspend fun getBaseline(@Query("conversation") conversation: String): BaselineComparison
 

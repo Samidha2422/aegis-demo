@@ -99,7 +99,8 @@ data class CallRecord(
     val timestamp: String,
     val duration_secs: Int = 0,
     val status: String = "missed", // "answered", "missed", "rejected"
-    val safety: SafetyObject = SafetyObject()
+    val safety: SafetyObject = SafetyObject(),
+    val transcript: String? = null
 )
 
 @Serializable

@@ -1,9 +1,10 @@
 use crate::baseline_comparator::BaselineComparator;
 use crate::engine_client::EngineClient;
 use crate::models::{
-    AlertItem, CallRecord, EngineEventEnvelope, Persona, Post, SafeMessage, WsEvent,
+    AlertItem, CallRecord, EngineEventEnvelope, Persona, Post, SafeMessage, SafetyObject, WsEvent,
 };
 use crate::scenario_runner::ScenarioRunner;
+use chrono::Utc;
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use tokio::sync::{broadcast, RwLock};
@@ -121,7 +122,7 @@ impl AppState {
 
         Self {
             personas: Arc::new(RwLock::new(personas)),
-            chats: Arc::new(RwLock::new(HashMap::new())),
+            chats: Arc::new(RwLock::new(Self::initial_chats())),
             blocked_users: Arc::new(RwLock::new(HashSet::new())),
             muted_users: Arc::new(RwLock::new(HashSet::new())),
             posts: Arc::new(RwLock::new(Vec::new())),
@@ -134,10 +135,181 @@ impl AppState {
         }
     }
 
+    pub fn initial_chats() -> HashMap<String, Vec<SafeMessage>> {
+        let now = Utc::now();
+        let mut map = HashMap::new();
+
+        // Ishaan (Meera's partner / healthy reciprocal relationship)
+        let ishaan_msgs = vec![
+            (
+                "meera",
+                "ishaan",
+                "Morning! Are you heading to the office soon?",
+                120,
+            ),
+            (
+                "ishaan",
+                "meera",
+                "Leaving in 10 mins. Want me to grab coffee?",
+                115,
+            ),
+            (
+                "meera",
+                "ishaan",
+                "Oat latte from the corner cafe please!",
+                110,
+            ),
+            ("ishaan", "meera", "You got it! See you at 10.", 105),
+            ("meera", "ishaan", "Thanks so much, you're the best!", 90),
+            (
+                "ishaan",
+                "meera",
+                "Haha of course! How's the user research doc?",
+                75,
+            ),
+            (
+                "meera",
+                "ishaan",
+                "Almost done, findings look really positive.",
+                60,
+            ),
+            (
+                "ishaan",
+                "meera",
+                "Nice! Still good for dinner tonight?",
+                45,
+            ),
+            ("meera", "ishaan", "Yes! 8pm at the Italian place?", 30),
+            (
+                "ishaan",
+                "meera",
+                "Perfect, table is already booked. See you tonight!",
+                15,
+            ),
+        ];
+
+        let ishaan_vec = ishaan_msgs
+            .into_iter()
+            .enumerate()
+            .map(|(idx, (snd, rcv, text, mins_ago))| SafeMessage {
+                id: format!("msg_seed_ishaan_{idx}"),
+                chat_id: "chat_ishaan".into(),
+                sender_id: snd.into(),
+                recipient_id: rcv.into(),
+                kind: "text".into(),
+                text: text.into(),
+                media_url: None,
+                transcript: None,
+                timestamp: now - chrono::Duration::minutes(mins_ago),
+                safety: SafetyObject {
+                    severity: 0.0,
+                    tier: "low".into(),
+                    reasons: vec![],
+                    signals: HashMap::new(),
+                    recommended_action: "allow".into(),
+                    state: "Delivered".into(),
+                    simulated: false,
+                    tags: vec![],
+                    degraded: vec![],
+                    model_versions: HashMap::new(),
+                    modules: HashMap::new(),
+                },
+            })
+            .collect();
+
+        // Diya (Close friend & colleague)
+        let diya_msgs = vec![
+            (
+                "diya",
+                "meera",
+                "Meera!! Did you see the research acceptance email?!",
+                180,
+            ),
+            (
+                "meera",
+                "diya",
+                "OMG YES! I couldn't believe it when I saw it!",
+                175,
+            ),
+            (
+                "diya",
+                "meera",
+                "So well deserved!! The design system research was incredible.",
+                160,
+            ),
+            (
+                "meera",
+                "diya",
+                "Couldn't have done it without your data help, honestly.",
+                145,
+            ),
+            (
+                "diya",
+                "meera",
+                "Team effort! We have to celebrate this weekend.",
+                120,
+            ),
+            ("meera", "diya", "Definitely! Saturday brunch?", 90),
+            (
+                "diya",
+                "meera",
+                "Saturday 11 AM at our spot. Can't wait!",
+                60,
+            ),
+        ];
+
+        let diya_vec = diya_msgs
+            .into_iter()
+            .enumerate()
+            .map(|(idx, (snd, rcv, text, mins_ago))| SafeMessage {
+                id: format!("msg_seed_diya_{idx}"),
+                chat_id: "chat_diya".into(),
+                sender_id: snd.into(),
+                recipient_id: rcv.into(),
+                kind: "text".into(),
+                text: text.into(),
+                media_url: None,
+                transcript: None,
+                timestamp: now - chrono::Duration::minutes(mins_ago),
+                safety: SafetyObject {
+                    severity: 0.0,
+                    tier: "low".into(),
+                    reasons: vec![],
+                    signals: HashMap::new(),
+                    recommended_action: "allow".into(),
+                    state: "Delivered".into(),
+                    simulated: false,
+                    tags: vec![],
+                    degraded: vec![],
+                    model_versions: HashMap::new(),
+                    modules: HashMap::new(),
+                },
+            })
+            .collect();
+
+        map.insert("chat_ishaan".into(), ishaan_vec);
+        map.insert("chat_diya".into(), diya_vec);
+        map
+    }
+
+    pub async fn seed_engine_history(&self) {
+        let chats = self.chats.read().await;
+        for (chat_id, msgs) in chats.iter() {
+            for m in msgs {
+                let mut event =
+                    EngineEventEnvelope::message(&m.sender_id, &m.recipient_id, chat_id, &m.text);
+                event.occurred_at = m.timestamp;
+                event.draft = false;
+                event.context.is_contact = true;
+                let _ = self.engine_client.score_event(&event).await;
+            }
+        }
+    }
+
     /// Resets all ephemeral state back to initial state
     pub async fn reset(&self) {
         let mut chats = self.chats.write().await;
-        chats.clear();
+        *chats = Self::initial_chats();
 
         let mut blocked = self.blocked_users.write().await;
         blocked.clear();

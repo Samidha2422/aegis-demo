@@ -59,7 +59,10 @@ fun SeverityMeter(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f, fill = false)
+            ) {
                 Surface(
                     color = meterColor,
                     shape = RoundedCornerShape(4.dp)
@@ -74,17 +77,21 @@ fun SeverityMeter(
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Behavioral Risk Score",
+                    text = "Risk Score",
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1
                 )
             }
+            Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = "${severity.toInt()}/100",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = meterColor
+                color = meterColor,
+                maxLines = 1,
+                softWrap = false
             )
         }
 

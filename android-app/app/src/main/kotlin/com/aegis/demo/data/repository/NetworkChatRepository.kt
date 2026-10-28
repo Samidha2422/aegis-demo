@@ -41,6 +41,10 @@ class NetworkChatRepository(
 
     override fun getConnectionError(): Flow<String?> = connectionError.asStateFlow()
 
+    override suspend fun refresh() {
+        refreshAll()
+    }
+
     override suspend fun getEngineStatus(): EngineStatus = try {
         apiService.getEngineStatus().also { connectionError.value = null }
     } catch (e: Exception) {
@@ -119,6 +123,10 @@ class NetworkChatRepository(
                 }
             }
 
+            override fun onOpen(webSocket: WebSocket, response: Response) {
+                connectionError.value = null
+            }
+
             override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
                 scope.launch {
                     delay(3000)
@@ -134,6 +142,7 @@ class NetworkChatRepository(
                 _personas.value = apiService.getPersonas()
                 if (_activePersona.value == null && _personas.value.isNotEmpty()) {
                     _activePersona.value = _personas.value[0]
+                connectionError.value = null
                 }
             } catch (e: Exception) { recordError(e) }
 
@@ -141,6 +150,7 @@ class NetworkChatRepository(
                 val actor = _activePersona.value?.id ?: "meera"
                 val chats = apiService.getChats(actor)
                 if ((_activePersona.value?.id ?: "meera") == actor) _chats.value = chats
+                connectionError.value = null
             } catch (e: Exception) { recordError(e) }
 
             try {
@@ -211,6 +221,21 @@ class NetworkChatRepository(
         return try {
             val part = MultipartBody.Part.createFormData("file", filename, imageBytes.toRequestBody("application/octet-stream".toMediaTypeOrNull()))
             val kind = "image".toRequestBody("text/plain".toMediaTypeOrNull())
+            val sender = (_activePersona.value?.id ?: "meera").toRequestBody("text/plain".toMediaTypeOrNull())
+            val msg = apiService.uploadMedia(chatId, part, kind, sender)
+            appendMessage(msg)
+            connectionError.value = null
+            Result.success(msg)
+        } catch (e: Exception) {
+            recordError(e)
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun sendVoiceNote(chatId: String, audioBytes: ByteArray, filename: String): Result<SafeMessage> {
+        return try {
+            val part = MultipartBody.Part.createFormData("file", filename, audioBytes.toRequestBody("audio/wav".toMediaTypeOrNull()))
+            val kind = "voice".toRequestBody("text/plain".toMediaTypeOrNull())
             val sender = (_activePersona.value?.id ?: "meera").toRequestBody("text/plain".toMediaTypeOrNull())
             val msg = apiService.uploadMedia(chatId, part, kind, sender)
             appendMessage(msg)
@@ -293,10 +318,48 @@ class NetworkChatRepository(
 
     override fun getCalls(): Flow<List<CallRecord>> = _calls.asStateFlow()
 
-    override suspend fun simulateCall(callerId: String) {
-        try {
-            apiService.simulateCall(mapOf("caller_id" to callerId))
-        } catch (e: Exception) { recordError(e) }
+    override suspend fun simulateCall(
+        callerId: String,
+        durationSecs: Int,
+        status: String,
+        transcript: String?
+    ): Result<CallRecord> {
+        return try {
+            val body = mutableMapOf(
+                "caller_id" to callerId,
+                "duration_secs" to durationSecs.toString(),
+                "status" to status
+            )
+            if (!transcript.isNullOrBlank()) {
+                body["transcript"] = transcript
+            }
+            val record = apiService.simulateCall(body)
+            val current = _calls.value.toMutableList()
+            current.removeAll { it.id == record.id }
+            current.add(0, record)
+            _calls.value = current
+            connectionError.value = null
+            Result.success(record)
+        } catch (e: Exception) {
+            recordError(e)
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun importCallLogCsv(csvText: String): Result<List<CallRecord>> {
+        return try {
+            val body = csvText.toRequestBody("text/csv".toMediaTypeOrNull())
+            requireSuccess(apiService.importCallLog(body))
+            refreshAll()
+            Result.success(_calls.value)
+        } catch (e: Exception) {
+            recordError(e)
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun confirmSlangTerm(term: String): Result<Boolean> {
+        return Result.success(true)
     }
 
     override fun getAlerts(): Flow<List<AlertItem>> = _alerts.asStateFlow()

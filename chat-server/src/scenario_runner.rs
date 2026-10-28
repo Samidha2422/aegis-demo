@@ -8,10 +8,11 @@ use tracing::info;
 pub struct ScenarioStep {
     pub at_ms: u64,
     pub actor: String,
-    pub to: String,
+    #[serde(default)]
+    pub to: Option<String>,
     pub kind: String, // "message", "image", "voice", "comment", "call", "block", "reply"
     #[serde(default)]
-    pub payload: String,
+    pub payload: serde_json::Value,
     #[serde(default)]
     pub asset: Option<String>,
     #[serde(default)]
@@ -37,13 +38,22 @@ impl ScenarioRunner {
 
     /// Loads a scenario definition from disk or embedded fallback
     pub fn load_scenario(&self, scenario_id: u32) -> Result<ScenarioDefinition, String> {
-        let file_path = format!("scenarios/scenario_{}.yaml", scenario_id);
-        if let Ok(content) = std::fs::read_to_string(&file_path) {
-            serde_yaml::from_str(&content).map_err(|e| format!("YAML parse error: {}", e))
-        } else {
-            // Self-contained fallback definition for testing
-            Ok(self.generate_fallback_scenario(scenario_id))
+        let paths = [
+            format!("scenarios/scenario_{}.yaml", scenario_id),
+            format!("../scenarios/scenario_{}.yaml", scenario_id),
+        ];
+        for path in &paths {
+            if let Ok(content) = std::fs::read_to_string(path) {
+                match serde_yaml::from_str::<ScenarioDefinition>(&content) {
+                    Ok(def) => return Ok(def),
+                    Err(e) => {
+                        tracing::warn!("YAML parse error in {}: {}; using fallback", path, e);
+                        return Ok(self.generate_fallback_scenario(scenario_id));
+                    }
+                }
+            }
         }
+        Ok(self.generate_fallback_scenario(scenario_id))
     }
 
     /// Plays a scenario with the specified speed compression factor
@@ -68,6 +78,16 @@ impl ScenarioRunner {
             let simulated_occurred_at =
                 base_start_time + ChronoDuration::milliseconds(step.at_ms as i64);
 
+            let to = step.to.clone().unwrap_or_else(|| {
+                step.payload
+                    .get("recipient_id")
+                    .or_else(|| step.payload.get("callee_id"))
+                    .or_else(|| step.payload.get("target_user_id"))
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("meera")
+                    .to_string()
+            });
+
             // Broadcast scenario step update to UI
             let _ = self.tx.send(WsEvent {
                 event: "scenario_step".to_string(),
@@ -77,9 +97,9 @@ impl ScenarioRunner {
                     "total_steps": total_steps,
                     "actor": step.actor,
                     "kind": step.kind,
-                    "description": format!("{} sends {} to {}", step.actor, step.kind, step.to),
+                    "description": format!("{} sends {} to {}", step.actor, step.kind, to),
                     "expect_tier": step.expect_tier.unwrap_or_else(|| "low".to_string()),
-                    "occurred_at": simulated_occurred_at
+                    "occurred_at": simulated_occurred_at.to_rfc3339()
                 }),
             });
         }
@@ -104,9 +124,9 @@ impl ScenarioRunner {
                     steps.push(ScenarioStep {
                         at_ms,
                         actor: "rohan".to_string(),
-                        to: "meera".to_string(),
+                        to: Some("meera".to_string()),
                         kind: "message".to_string(),
-                        payload: format!("Hey Meera, message #{}! Hope your day is wonderful.", i),
+                        payload: serde_json::json!({ "text": format!("Hey Meera, message #{}! Hope your day is wonderful.", i) }),
                         asset: None,
                         expect_tier: Some(expect_tier.to_string()),
                     });
@@ -116,9 +136,9 @@ impl ScenarioRunner {
                 steps.push(ScenarioStep {
                     at_ms: 1000,
                     actor: "test_actor".to_string(),
-                    to: "meera".to_string(),
+                    to: Some("meera".to_string()),
                     kind: "message".to_string(),
-                    payload: "Test message".to_string(),
+                    payload: serde_json::json!({ "text": "Test message" }),
                     asset: None,
                     expect_tier: Some("low".to_string()),
                 });
