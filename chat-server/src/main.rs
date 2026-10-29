@@ -32,10 +32,9 @@ async fn main() -> anyhow::Result<()> {
         .allow_methods(Any)
         .allow_headers(Any);
 
-    let state_seed = state.clone();
-    tokio::spawn(async move {
-        state_seed.seed_engine_history().await;
-    });
+    if let Err(error) = state.seed_engine_history().await {
+        tracing::warn!(%error, "Could not seed engine chat history; historical risk context may be incomplete");
+    }
 
     let app = Router::new()
         .route("/engine/status", get(handlers::moderation::engine_status))
@@ -49,6 +48,7 @@ async fn main() -> anyhow::Result<()> {
             get(handlers::chats::get_messages).post(handlers::chats::send_message),
         )
         .route("/chats/:id/media", post(handlers::chats::upload_media))
+        .route("/media/:id", get(handlers::chats::get_media))
         // Moderation & Nudge
         .route("/users/:id/block", post(handlers::moderation::block_user))
         .route(

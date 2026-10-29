@@ -347,14 +347,14 @@ fun DemoDirectorScreen(
                                     )
                                     Spacer(modifier = Modifier.height(6.dp))
                                     Text(
-                                        text = "0 Flags",
+                                        text = baselineComparison?.let { "${it.keyword_filter_flags} Flags" } ?: "—",
                                         style = MaterialTheme.typography.headlineMedium,
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.outline
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
-                                        text = "Missed polite harassment. No bad words detected.",
+                                        text = baselineComparison?.let { "${it.total_messages} messages checked" } ?: "Comparison unavailable",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -377,14 +377,14 @@ fun DemoDirectorScreen(
                                     )
                                     Spacer(modifier = Modifier.height(6.dp))
                                     Text(
-                                        text = "88/100",
+                                        text = baselineComparison?.let { "${it.engine_max_severity.toInt()}/100" } ?: "—",
                                         style = MaterialTheme.typography.headlineMedium,
                                         fontWeight = FontWeight.Bold,
                                         color = SafetyTheme.highRisk
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
-                                        text = "Escalated to HIGH. Velocity & 0-reply pattern flagged.",
+                                        text = baselineComparison?.let { "${it.engine_max_tier.uppercase()}: ${it.engine_reasons.firstOrNull() ?: it.behavioral_insight}" } ?: "Comparison unavailable",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = SafetyTheme.onHighRiskContainer
                                     )

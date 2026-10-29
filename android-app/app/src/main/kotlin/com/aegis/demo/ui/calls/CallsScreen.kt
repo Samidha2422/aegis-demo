@@ -30,6 +30,8 @@ import com.aegis.demo.di.ServiceLocator
 import com.aegis.demo.ui.components.SeverityMeter
 import com.aegis.demo.ui.theme.SafetyTheme
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,6 +44,8 @@ fun CallsScreen(
     val context = LocalContext.current
     val calls by repository.getCalls().collectAsState(initial = emptyList())
 
+    val snackbarHostState = remember { SnackbarHostState() }
+    var isImporting by remember { mutableStateOf(false) }
     var showConfigDialog by remember { mutableStateOf(false) }
     var showCsvDialog by remember { mutableStateOf(false) }
     var simulatedResult by remember { mutableStateOf<CallRecord?>(null) }
@@ -50,15 +54,21 @@ fun CallsScreen(
     val csvPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        uri?.let {
+        if (uri != null) scope.launch {
+            isImporting = true
             try {
-                val text = context.contentResolver.openInputStream(it)?.bufferedReader()?.use { r -> r.readText() }
-                if (!text.isNullOrBlank()) {
-                    scope.launch {
-                        repository.importCallLogCsv(text)
-                    }
+                val text = withContext(Dispatchers.IO) {
+                    context.contentResolver.openInputStream(uri)?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }
+                        ?: throw IllegalArgumentException("Could not open CSV")
                 }
-            } catch (_: Exception) {}
+                repository.importCallLogCsv(text).fold(
+                    onSuccess = { snackbarHostState.showSnackbar("Imported ${it.size} calls${if (repository.isReplayMode()) " (unscored in replay mode)" else ""}") },
+                    onFailure = { snackbarHostState.showSnackbar(it.message ?: "Call import failed") }
+                )
+            } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                snackbarHostState.showSnackbar(e.message ?: "Could not read CSV")
+            } finally { isImporting = false }
         }
     }
 
@@ -67,6 +77,7 @@ fun CallsScreen(
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             Column {
                 TopAppBar(
@@ -78,7 +89,7 @@ fun CallsScreen(
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = if (hasSpike) "Quiet-Hour Repeated Spike Active" else "VoIP Audit & Activity",
+                                text = if (hasSpike) "High-risk calls" else "Call activity",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = if (hasSpike) SafetyTheme.highRisk else MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -166,86 +177,6 @@ fun CallsScreen(
                     .padding(paddingValues)
                     .padding(horizontal = 16.dp)
             ) {
-                // Only display the high-risk banner if there is an active spike
-                if (hasSpike) {
-                    item {
-                        Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = SafetyTheme.highRiskContainer
-                            ),
-                            border = BorderStroke(1.dp, SafetyTheme.highRiskBorder),
-                            shape = RoundedCornerShape(10.dp),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 12.dp)
-                        ) {
-                            Column(modifier = Modifier.padding(14.dp)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Surface(
-                                        shape = CircleShape,
-                                        color = SafetyTheme.highRisk,
-                                        modifier = Modifier.size(32.dp)
-                                    ) {
-                                        Box(contentAlignment = Alignment.Center) {
-                                            Icon(
-                                                imageVector = Icons.Default.Shield,
-                                                contentDescription = "Shield",
-                                                tint = Color.White,
-                                                modifier = Modifier.size(18.dp)
-                                            )
-                                        }
-                                    }
-                                    Spacer(modifier = Modifier.width(12.dp))
-                                    Column {
-                                        Text(
-                                            text = "QUIET-HOUR CALL SPIKE DETECTED",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            fontWeight = FontWeight.Bold,
-                                            color = SafetyTheme.highRisk
-                                        )
-                                        Text(
-                                            text = "40 calls between 01:00 AM – 05:30 AM (92% unanswered).",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = SafetyTheme.onHighRiskContainer
-                                        )
-                                    }
-                                }
-                                Spacer(modifier = Modifier.height(10.dp))
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Surface(
-                                        shape = RoundedCornerShape(4.dp),
-                                        color = MaterialTheme.colorScheme.surface,
-                                        border = BorderStroke(1.dp, SafetyTheme.highRiskBorder)
-                                    ) {
-                                        Text(
-                                            text = "Frequency Risk: 96/100",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            fontWeight = FontWeight.Bold,
-                                            color = SafetyTheme.highRisk,
-                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                        )
-                                    }
-                                    TextButton(
-                                        onClick = onOpenSafetyCenter,
-                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
-                                    ) {
-                                        Text(
-                                            text = "View Evidence",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = SafetyTheme.highRisk
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
                 items(calls, key = { it.id }) { call ->
                     CallRecordItem(call = call)
                     HorizontalDivider(
@@ -270,6 +201,8 @@ fun CallsScreen(
                         showConfigDialog = false
                         res.onSuccess { record ->
                             simulatedResult = record
+                        }.onFailure { error ->
+                            snackbarHostState.showSnackbar(error.message ?: "Call simulation failed")
                         }
                     }
                 }
@@ -281,12 +214,12 @@ fun CallsScreen(
             AlertDialog(
                 onDismissRequest = { showCsvDialog = false },
                 title = {
-                    Text("Import Call Log CSV (Scenario 6)", fontWeight = FontWeight.Bold)
+                    Text("Import call log", fontWeight = FontWeight.Bold)
                 },
                 text = {
                     Column {
                         Text(
-                            "Analyze quiet-hour persistence, velocity spikes, and unanswered call patterns from synthetic or external call logs.",
+                            "CSV columns: event_id, occurred_at, caller_id, callee_id, duration_s, answered, voicemail, after_refusal, simulated.",
                             style = MaterialTheme.typography.bodyMedium
                         )
                         Spacer(modifier = Modifier.height(16.dp))
@@ -294,19 +227,27 @@ fun CallsScreen(
                             onClick = {
                                 showCsvDialog = false
                                 scope.launch {
-                                    val bundledCsv = try {
-                                        context.assets.open("assets/overnight_calls.csv").bufferedReader().use { it.readText() }
-                                    } catch (_: Exception) { "" }
-                                    if (bundledCsv.isNotBlank()) {
-                                        repository.importCallLogCsv(bundledCsv)
-                                    }
+                                    isImporting = true
+                                    try {
+                                        val bundledCsv = withContext(Dispatchers.IO) {
+                                            context.assets.open("assets/overnight_calls.csv").bufferedReader(Charsets.UTF_8).use { it.readText() }
+                                        }
+                                        repository.importCallLogCsv(bundledCsv).fold(
+                                            onSuccess = { snackbarHostState.showSnackbar("Imported ${it.size} simulated calls${if (repository.isReplayMode()) " (unscored in replay mode)" else ""}") },
+                                            onFailure = { snackbarHostState.showSnackbar(it.message ?: "Call import failed") }
+                                        )
+                                    } catch (e: Exception) {
+                                        if (e is kotlinx.coroutines.CancellationException) throw e
+                                        snackbarHostState.showSnackbar(e.message ?: "Could not read bundled CSV")
+                                    } finally { isImporting = false }
                                 }
                             },
+                            enabled = !isImporting,
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Icon(Icons.Default.CloudDownload, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Load Bundled Overnight Spike (40 Calls)")
+                            Text("Load simulated overnight calls")
                         }
                         Spacer(modifier = Modifier.height(8.dp))
                         OutlinedButton(
@@ -314,6 +255,7 @@ fun CallsScreen(
                                 showCsvDialog = false
                                 csvPicker.launch("*/*")
                             },
+                            enabled = !isImporting,
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Icon(Icons.Default.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -484,6 +426,7 @@ fun SimulateCallConfigDialog(
                         onClick = {
                             callerId = "unknown_stalker"
                             status = "missed"
+                            durationSecs = 0
                             transcript = "Pick up right now. You know you can't ignore me forever. I'm outside."
                         },
                         label = { Text("Hostile Stalker", style = MaterialTheme.typography.labelSmall) }
@@ -492,6 +435,7 @@ fun SimulateCallConfigDialog(
                         onClick = {
                             callerId = "rohan"
                             status = "missed"
+                            durationSecs = 0
                             transcript = "Why aren't you answering me? Pick up or else I will keep calling."
                         },
                         label = { Text("Coercive Stalking", style = MaterialTheme.typography.labelSmall) }
@@ -500,6 +444,7 @@ fun SimulateCallConfigDialog(
                         onClick = {
                             callerId = "clinic"
                             status = "answered"
+                            durationSecs = 15
                             transcript = "Hi Meera, this is City Dental confirming your routine cleaning tomorrow at 10 AM."
                         },
                         label = { Text("Benign Clinic", style = MaterialTheme.typography.labelSmall) }
@@ -508,6 +453,7 @@ fun SimulateCallConfigDialog(
                         onClick = {
                             callerId = "ishaan"
                             status = "missed"
+                            durationSecs = 0
                             transcript = "Hey Meera, whenever you get a free moment, please give me a quick ring back!"
                         },
                         label = { Text("Friendly Check-in", style = MaterialTheme.typography.labelSmall) }
@@ -570,7 +516,7 @@ fun IncomingCallResultDialog(
         },
         title = {
             Text(
-                text = if (isHighRisk) "High Risk Call Detected" else "Call Evaluated",
+                text = if (record.safety.state == "EngineUnavailable") "Call unscored" else if (isHighRisk) "High Risk Call Detected" else "Call Evaluated",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -617,10 +563,12 @@ fun IncomingCallResultDialog(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                SeverityMeter(
-                    severity = record.safety.severity,
-                    tier = record.safety.tier
-                )
+                if (record.safety.state != "EngineUnavailable") {
+                    SeverityMeter(
+                        severity = record.safety.severity,
+                        tier = record.safety.tier
+                    )
+                }
 
                 if (record.safety.reasons.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(4.dp))
@@ -779,7 +727,7 @@ fun CallRecordItem(
             }
             Spacer(modifier = Modifier.height(2.dp))
             Text(
-                text = callDetail,
+                text = if (call.safety.state == "EngineUnavailable") "$callDetail ? Unscored" else callDetail,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,

@@ -40,28 +40,9 @@ fun FeedScreen(
     var commentText by remember { mutableStateOf("") }
     var showQuarantinedComments by remember { mutableStateOf(false) }
 
-    val post = posts.firstOrNull() ?: Post(
-        id = "post_01",
-        author_id = "meera",
-        content = "Excited to announce our design team's research paper on protective digital spaces was accepted! #DesignLeadership",
-        timestamp = "3 hours ago",
-        comments_count = 24,
-        is_protected = true
-    )
-
-    // Demo coordinated comment pile-on (Scenario 2)
-    val demoComments = remember {
-        listOf(
-            Comment("c1", post.id, "throwaway_99", "Nobody asked for your opinion. Delete your account.", "2h ago",
-                SafetyObject(78f, "high", listOf("Coordinated cluster account (Age < 2 days)"), state = "Held")),
-            Comment("c2", post.id, "bot_alpha", "Overrated trash. Everyone in the office hates you.", "2h ago",
-                SafetyObject(82f, "high", listOf("Targeted harassment pattern", "Graph cluster: Dogpiling mob"), state = "Held")),
-            Comment("c3", post.id, "ishaan", "So proud of you Meera! Deserved recognition.", "1h ago",
-                SafetyObject(0f, "low", emptyList(), state = "Delivered")),
-            Comment("c4", post.id, "diya", "Congratulations!! Celebrating together this weekend!", "1h ago",
-                SafetyObject(0f, "low", emptyList(), state = "Delivered"))
-        )
-    }
+    val post = posts.firstOrNull() ?: return
+    val comments = post.comments
+    val heldCount = comments.count { it.safety.state == "Held" }
 
     Scaffold(
         topBar = {
@@ -137,8 +118,9 @@ fun FeedScreen(
                             onClick = {
                                 if (commentText.isNotBlank()) {
                                     scope.launch {
-                                        repository.addComment(post.id, commentText)
-                                        commentText = ""
+                                        if (repository.addComment(post.id, commentText).isSuccess) {
+                                            commentText = ""
+                                        }
                                     }
                                 }
                             },
@@ -233,8 +215,8 @@ fun FeedScreen(
                 }
             }
 
-            // Aegis Mob Shield Intervention Banner (Scenario 2)
-            item {
+            // Protection reflects the server response.
+            if (post.is_protected || heldCount > 0) item {
                 Card(
                     colors = CardDefaults.cardColors(
                         containerColor = SafetyTheme.highRiskContainer
@@ -264,13 +246,13 @@ fun FeedScreen(
                             Spacer(modifier = Modifier.width(12.dp))
                             Column {
                                 Text(
-                                    text = "COORDINATED DOGPILING MITIGATED",
+                                    text = if (post.is_protected) "PILE-ON SIGNAL DETECTED" else "COMMENTS HELD",
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = SafetyTheme.highRisk
                                 )
                                 Text(
-                                    text = "24 comments from temporary cluster accounts quarantined.",
+                                    text = "$heldCount comments held for review.",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = SafetyTheme.onHighRiskContainer
                                 )
@@ -288,7 +270,7 @@ fun FeedScreen(
                                 border = BorderStroke(1.dp, SafetyTheme.highRiskBorder)
                             ) {
                                 Text(
-                                    text = "Modularity: 0.84",
+                                    text = "Review required",
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = SafetyTheme.highRisk,
@@ -300,7 +282,7 @@ fun FeedScreen(
                                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
                             ) {
                                 Text(
-                                    text = if (showQuarantinedComments) "Hide Quarantined" else "View 24 Quarantined",
+                                    text = if (showQuarantinedComments) "Hide Quarantined" else "View $heldCount held",
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.SemiBold,
                                     color = SafetyTheme.highRisk
@@ -313,14 +295,14 @@ fun FeedScreen(
 
             item {
                 Text(
-                    text = "Discussion (${demoComments.size})",
+                    text = "Discussion (${comments.size})",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
             }
 
-            items(demoComments) { comment ->
+            items(comments) { comment ->
                 val isQuarantined = comment.safety.state == "Held"
                 if (!isQuarantined || showQuarantinedComments) {
                     Surface(

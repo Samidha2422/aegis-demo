@@ -373,7 +373,12 @@ chat-server. See RUNBOOK.md for host credentials, JDK/SDK setup and logged check
   degraded. Engine errors use HTTP 502/503 {error,detail}; no clean fallback score.
 - POST /chats/{id}/media accepts file, kind=image and optional sender_id. Maximum
   image size is 10 MiB. PNG/JPEG/WebP MIME is derived from bytes. The actual image
-  bytes are sent to Adapt, then dropped. media_url=null; no proxy image is substituted.
+  bytes are sent to Adapt and retained in a bounded in-memory store (100 MiB total).
+  Successful uploads return media_url=/media/{uuid}; GET returns the original bytes
+  with their validated MIME and Cache-Control: no-store. URLs are bearer capabilities,
+  not authenticated; anyone who knows one can retrieve it. Reset and restart erase the
+  store. When full, uploads return 507. Engine failures produce unknown, unscored
+  messages, and blocked senders remain held. No proxy is substituted.
 - SafetyObject adds degraded[], model_versions{} and modules{}; each module
   contains score, label, status (built/simulated/roadmap), backend and confidence.
   Numeric signals{} remains compatible. Unknown/unscored results use tier=unknown.
@@ -389,7 +394,7 @@ chat-server. See RUNBOOK.md for host credentials, JDK/SDK setup and logged check
   SafeMessage. Unavailable transcription is reported as unscored.
 - GET /evidence/export?format=json|html returns actual Adapt evidence for meera.
   Non-2xx is an error, not an empty successful export. Drafts are absent from evidence.
-- POST /demo/reset clears chat memory only. Adapt history must be managed separately.
+- POST /demo/reset clears chat and media memory. Adapt history must be managed separately.
   Existing scenario playback is a SIMULATED progress feed, not engine verification.
 
 ### Refusal actor body and inbox view

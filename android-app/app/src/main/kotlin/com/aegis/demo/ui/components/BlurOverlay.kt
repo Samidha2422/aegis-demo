@@ -61,12 +61,6 @@ fun BlurOverlay(
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center
                     )
-                    Text(
-                        text = "DEMO PROXY IMAGE",
-                        color = Color.White.copy(alpha = 0.7f),
-                        style = MaterialTheme.typography.labelSmall,
-                        textAlign = TextAlign.Center
-                    )
                     Spacer(modifier = Modifier.height(10.dp))
                     FilledTonalButton(
                         onClick = onToggleBlur,

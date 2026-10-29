@@ -430,7 +430,7 @@ class FixtureRepository : ChatRepository {
             recipient_id = chatId.removePrefix("chat_"),
             kind = "image",
             text = filename,
-            media_url = "assets/proxy_nsfw.png",
+            media_url = if (filename == "demo_proxy_nsfw.png") "assets/proxy_nsfw.png" else null,
             timestamp = "Just now",
             safety = safety
         )
@@ -451,8 +451,8 @@ class FixtureRepository : ChatRepository {
             recipient_id = chatId.removePrefix("chat_"),
             kind = "audio",
             text = "Voice Note (${audioBytes.size} bytes)",
-            media_url = "assets/synthetic_audio.wav",
-            transcript = "Voice note recorded and analyzed by Aegis Engine.",
+            media_url = if (filename == "synthetic_audio.wav") "assets/synthetic_audio.wav" else null,
+            transcript = null,
             timestamp = "Just now",
             safety = SafetyObject(
                 severity = 15f,
@@ -607,47 +607,14 @@ class FixtureRepository : ChatRepository {
     }
 
     override suspend fun importCallLogCsv(csvText: String): Result<List<CallRecord>> {
-        val lines = csvText.lines().map { it.trim() }.filter { it.isNotEmpty() }
-        if (lines.isEmpty()) return Result.failure(IllegalArgumentException("Empty CSV"))
-        val rows = if (lines[0].startsWith("call_id")) lines.drop(1) else lines
-        val parsed = rows.mapIndexed { idx, line ->
-            val cols = line.split(",").map { it.trim() }
-            val caller = cols.getOrNull(1) ?: "unknown_stalker"
-            val callee = cols.getOrNull(2) ?: "meera"
-            val rawTs = cols.getOrNull(3) ?: "02:00 AM"
-            val ts = if (rawTs.contains("T")) {
-                val timePart = rawTs.substringAfter("T").substringBefore("Z")
-                val hourMin = timePart.split(":")
-                val h = hourMin.getOrNull(0)?.toIntOrNull() ?: 2
-                val m = hourMin.getOrNull(1) ?: "00"
-                String.format("%02d:%s AM", h, m)
-            } else rawTs
-            val dur = cols.getOrNull(4)?.toIntOrNull() ?: 0
-            val stat = cols.getOrNull(5) ?: "missed"
-            CallRecord(
-                id = "call_imported_$idx",
-                caller_id = caller,
-                callee_id = callee,
-                timestamp = ts,
-                duration_secs = dur,
-                status = stat,
-                safety = SafetyObject(
-                    severity = 94f,
-                    tier = "high",
-                    reasons = listOf(
-                        "CSV Call Log: 40 calls overnight, 92% unanswered",
-                        "Quiet-hour repeated attempt spike (02:00-04:00 AM)"
-                    ),
-                    recommended_action = "throttle",
-                    state = "Escalated",
-                    simulated = true,
-                    tags = listOf("IMPORTED CSV", "SIMULATED CALL LOG")
-                ),
-                transcript = if (stat == "answered" && dur > 0) "Hello? Why do you keep calling me in the middle of the night?" else null
-            )
+        return try {
+            val parsed = parseCallCsv(csvText)
+            val ids = parsed.map { it.id }.toSet()
+            _calls.update { current -> parsed + current.filterNot { it.id in ids } }
+            Result.success(parsed)
+        } catch (e: Exception) {
+            Result.failure(e)
         }
-        _calls.value = parsed + _calls.value
-        return Result.success(parsed)
     }
 
     override fun getAlerts(): Flow<List<AlertItem>> = _alerts.asStateFlow()

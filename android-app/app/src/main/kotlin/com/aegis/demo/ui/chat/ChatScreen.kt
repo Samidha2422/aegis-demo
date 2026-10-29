@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.outlined.Shield
@@ -106,25 +107,16 @@ fun ChatScreen(
                                         modifier = Modifier.weight(1f, fill = false)
                                     )
                                     if (currentChat.participant.is_blocked) {
-                                        Surface(
-                                            shape = RoundedCornerShape(4.dp),
-                                            color = MaterialTheme.colorScheme.errorContainer,
-                                            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.4f))
-                                        ) {
-                                            Text(
-                                                text = "BLOCKED",
-                                                style = MaterialTheme.typography.labelSmall,
-                                                fontWeight = FontWeight.ExtraBold,
-                                                color = MaterialTheme.colorScheme.error,
-                                                softWrap = false,
-                                                maxLines = 1,
-                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                            )
-                                        }
+                                        Icon(
+                                            imageVector = Icons.Default.Block,
+                                            contentDescription = "Blocked contact",
+                                            tint = MaterialTheme.colorScheme.error,
+                                            modifier = Modifier.size(16.dp)
+                                        )
                                     }
                                 }
                                 Text(
-                                    text = if (currentChat.participant.is_blocked) "Contact blocked • Auto-protection active" else "Active now",
+                                    text = if (currentChat.participant.is_blocked) "Blocked • Shielding active" else "Active now",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = if (currentChat.participant.is_blocked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
                                     maxLines = 1,
@@ -334,7 +326,7 @@ fun ChatScreen(
                             modifier = Modifier.padding(horizontal = 24.dp)
                         ) {
                             Text(
-                                text = "Today • Simulated Demo Thread",
+                                text = "Today",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)

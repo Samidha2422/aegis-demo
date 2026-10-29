@@ -1,6 +1,13 @@
 package com.aegis.demo.ui.components
 
 import android.net.Uri
+import android.Manifest
+import android.annotation.SuppressLint
+import android.content.pm.PackageManager
+import android.media.AudioFormat
+import android.media.AudioRecord
+import android.media.MediaRecorder
+import androidx.core.content.ContextCompat
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -30,6 +37,9 @@ import com.aegis.demo.data.model.NudgeResult
 import com.aegis.demo.ui.theme.SafetyTheme
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
@@ -55,6 +65,82 @@ fun ComposerFloatingToolbar(
     val scope = rememberCoroutineScope()
     var debounceJob by remember { mutableStateOf<Job?>(null) }
     val context = LocalContext.current
+    var recording by remember { mutableStateOf(false) }
+    var recordingSeconds by remember { mutableIntStateOf(0) }
+    var recordingJob by remember { mutableStateOf<Job?>(null) }
+    val stopRecording = remember { AtomicBoolean(false) }
+
+    DisposableEffect(Unit) {
+        onDispose { recordingJob?.cancel() }
+    }
+
+    @SuppressLint("MissingPermission")
+    fun startRecording() {
+        if (recording) return
+        attachmentError = null
+        recordingSeconds = 0
+        recording = true
+        stopRecording.set(false)
+        recordingJob = scope.launch {
+            try {
+                val wav = withContext(Dispatchers.IO) {
+                    val sampleRate = 16_000
+                    val maxBytes = sampleRate * 2 * 60
+                    val minBuffer = AudioRecord.getMinBufferSize(
+                        sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT
+                    )
+                    check(minBuffer > 0) { "Microphone format unavailable." }
+                    val recorder = AudioRecord(
+                        MediaRecorder.AudioSource.MIC, sampleRate, AudioFormat.CHANNEL_IN_MONO,
+                        AudioFormat.ENCODING_PCM_16BIT, maxOf(minBuffer, 4096)
+                    )
+                    try {
+                        check(recorder.state == AudioRecord.STATE_INITIALIZED) { "Microphone unavailable." }
+                        recorder.startRecording()
+                        check(recorder.recordingState == AudioRecord.RECORDSTATE_RECORDING) { "Could not start recording." }
+                        val pcm = ByteArrayOutputStream()
+                        val buffer = ByteArray(4096)
+                        var lastSecond = -1
+                        while (!stopRecording.get() && pcm.size() < maxBytes) {
+                            currentCoroutineContext().ensureActive()
+                            val count = recorder.read(buffer, 0, minOf(buffer.size, maxBytes - pcm.size()), AudioRecord.READ_NON_BLOCKING)
+                            check(count >= 0) { "Microphone recording failed." }
+                            if (count > 0) pcm.write(buffer, 0, count) else delay(20)
+                            val seconds = pcm.size() / (sampleRate * 2)
+                            if (seconds != lastSecond) {
+                                lastSecond = seconds
+                                withContext(Dispatchers.Main) { recordingSeconds = seconds }
+                            }
+                        }
+                        val samples = pcm.toByteArray()
+                        check(samples.isNotEmpty()) { "Recording is empty." }
+                        ByteBuffer.allocate(44 + samples.size).order(ByteOrder.LITTLE_ENDIAN).apply {
+                            put("RIFF".toByteArray(Charsets.US_ASCII)); putInt(36 + samples.size)
+                            put("WAVEfmt ".toByteArray(Charsets.US_ASCII)); putInt(16)
+                            putShort(1); putShort(1); putInt(sampleRate); putInt(sampleRate * 2)
+                            putShort(2); putShort(16); put("data".toByteArray(Charsets.US_ASCII))
+                            putInt(samples.size); put(samples)
+                        }.array()
+                    } finally {
+                        try { if (recorder.recordingState == AudioRecord.RECORDSTATE_RECORDING) recorder.stop() }
+                        finally { recorder.release() }
+                    }
+                }
+                onSendVoice(wav, "voice_${System.currentTimeMillis()}.wav")
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                attachmentError = error.message ?: "Unable to record audio."
+            } finally {
+                recording = false
+                recordingJob = null
+            }
+        }
+    }
+
+    val microphonePermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) startRecording() else attachmentError = "Microphone permission is required to record."
+    }
 
     fun loadAttachment(
         maxBytes: Int,
@@ -93,8 +179,41 @@ fun ComposerFloatingToolbar(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         if (uri != null) {
-            loadAttachment(10 * 1024 * 1024, { context.contentResolver.openInputStream(uri) }) {
-                onSendImage(it, "photo_${System.currentTimeMillis()}.jpg")
+            scope.launch {
+                attachmentError = null
+                try {
+                    val bytes = withContext(Dispatchers.IO) {
+                        val raw = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                            ?: throw java.io.IOException("Cannot open image")
+                        val maxDim = 1280
+                        val boundsOpts = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                        android.graphics.BitmapFactory.decodeByteArray(raw, 0, raw.size, boundsOpts)
+                        var sampleSize = 1
+                        while (boundsOpts.outWidth / sampleSize > maxDim * 1.5 || boundsOpts.outHeight / sampleSize > maxDim * 1.5) {
+                            sampleSize *= 2
+                        }
+                        val decodeOpts = android.graphics.BitmapFactory.Options().apply { inSampleSize = sampleSize }
+                        val bitmap = android.graphics.BitmapFactory.decodeByteArray(raw, 0, raw.size, decodeOpts)
+                            ?: throw IllegalArgumentException("Unsupported image format")
+                        val width = bitmap.width
+                        val height = bitmap.height
+                        val finalBitmap = if (width > maxDim || height > maxDim) {
+                            val ratio = minOf(maxDim.toFloat() / width, maxDim.toFloat() / height)
+                            android.graphics.Bitmap.createScaledBitmap(bitmap, (width * ratio).toInt(), (height * ratio).toInt(), true)
+                        } else {
+                            bitmap
+                        }
+                        val out = ByteArrayOutputStream()
+                        finalBitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 85, out)
+                        out.toByteArray()
+                    }
+                    require(bytes.isNotEmpty()) { "Image is empty" }
+                    onSendImage(bytes, "photo_${System.currentTimeMillis()}.jpg")
+                } catch (error: CancellationException) {
+                    throw error
+                } catch (error: Exception) {
+                    attachmentError = error.message ?: "Unable to read image."
+                }
             }
         }
     }
@@ -243,7 +362,16 @@ fun ComposerFloatingToolbar(
             shadowElevation = 2.dp,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Row(
+            if (recording) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Recording ${recordingSeconds}s / 60s (auto-send)", modifier = Modifier.weight(1f))
+                    TextButton(onClick = { recordingJob?.cancel() }) { Text("Cancel") }
+                    Button(onClick = { stopRecording.set(true) }) { Text("Send") }
+                }
+            } else Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 8.dp, vertical = 2.dp),
@@ -343,11 +471,15 @@ fun ComposerFloatingToolbar(
                     }
                 } else {
                     IconButton(
-                        onClick = { audioPicker.launch(arrayOf("audio/wav", "audio/x-wav")) }
+                        onClick = {
+                            if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                                startRecording()
+                            } else microphonePermission.launch(Manifest.permission.RECORD_AUDIO)
+                        }
                     ) {
                         Icon(
-                            imageVector = Icons.Default.AudioFile,
-                            contentDescription = "Choose WAV audio",
+                            imageVector = Icons.Default.Mic,
+                            contentDescription = "Record voice message",
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(22.dp)
                         )

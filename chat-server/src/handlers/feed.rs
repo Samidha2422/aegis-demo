@@ -63,9 +63,17 @@ pub async fn add_comment(
     event.context.recipient_blocked_sender =
         state.blocked_users.read().await.contains(&refusal_pair);
     event.context.recipient_muted_sender = state.muted_users.read().await.contains(&refusal_pair);
-    let safety = match state.engine_client.score_event(&event).await {
-        Ok(v) => ActionPolicy::apply(&v, "text", event.context.recipient_blocked_sender, 0),
-        Err(e) => ActionPolicy::unscored(&e.to_string()),
+    let (safety, pile_on) = match state.engine_client.score_event(&event).await {
+        Ok(v) => {
+            let pile_on = v.modules.get("pile_on").is_some_and(|signal| {
+                signal.status == "built" && signal.backend != "disabled" && signal.score >= 0.6
+            });
+            (
+                ActionPolicy::apply(&v, "text", event.context.recipient_blocked_sender, 0),
+                pile_on,
+            )
+        }
+        Err(e) => (ActionPolicy::unscored(&e.to_string()), false),
     };
     let comment = Comment {
         id: event.event_id,
@@ -80,7 +88,7 @@ pub async fn add_comment(
         .iter_mut()
         .find(|p| p.id == id)
         .ok_or(StatusCode::NOT_FOUND)?;
-    post.is_protected |= matches!(comment.safety.tier.as_str(), "high" | "urgent");
+    post.is_protected |= pile_on;
     post.comments.push(comment.clone());
     post.comments_count = post.comments.len();
     Ok(Json(comment))

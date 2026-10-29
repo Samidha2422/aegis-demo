@@ -6,13 +6,18 @@ use crate::models::{
 use crate::scenario_runner::ScenarioRunner;
 use chrono::Utc;
 use std::collections::{HashMap, HashSet};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use tokio::sync::{broadcast, RwLock};
+
+type MediaStore = HashMap<String, (&'static str, Vec<u8>)>;
 
 #[derive(Clone)]
 pub struct AppState {
     pub personas: Arc<RwLock<Vec<Persona>>>,
     pub chats: Arc<RwLock<HashMap<String, Vec<SafeMessage>>>>,
+    pub media: Arc<RwLock<MediaStore>>,
+    pub media_generation: Arc<AtomicU64>,
     pub blocked_users: Arc<RwLock<HashSet<(String, String)>>>,
     pub muted_users: Arc<RwLock<HashSet<(String, String)>>>,
     pub posts: Arc<RwLock<Vec<Post>>>,
@@ -123,6 +128,8 @@ impl AppState {
         Self {
             personas: Arc::new(RwLock::new(personas)),
             chats: Arc::new(RwLock::new(Self::initial_chats())),
+            media: Arc::new(RwLock::new(HashMap::new())),
+            media_generation: Arc::new(AtomicU64::new(0)),
             blocked_users: Arc::new(RwLock::new(HashSet::new())),
             muted_users: Arc::new(RwLock::new(HashSet::new())),
             posts: Arc::new(RwLock::new(Vec::new())),
@@ -294,24 +301,27 @@ impl AppState {
         map
     }
 
-    pub async fn seed_engine_history(&self) {
-        let chats = self.chats.read().await;
-        for (chat_id, msgs) in chats.iter() {
+    pub async fn seed_engine_history(&self) -> Result<(), crate::engine_client::EngineError> {
+        let chats = self.chats.read().await.clone();
+        for (chat_id, msgs) in &chats {
             for m in msgs {
                 let mut event =
                     EngineEventEnvelope::message(&m.sender_id, &m.recipient_id, chat_id, &m.text);
                 event.occurred_at = m.timestamp;
                 event.draft = false;
                 event.context.is_contact = true;
-                let _ = self.engine_client.score_event(&event).await;
+                self.engine_client.score_event(&event).await?;
             }
         }
+        Ok(())
     }
 
     /// Resets all ephemeral state back to initial state
     pub async fn reset(&self) {
         let mut chats = self.chats.write().await;
+        self.media_generation.fetch_add(1, Ordering::SeqCst);
         *chats = Self::initial_chats();
+        self.media.write().await.clear();
 
         let mut blocked = self.blocked_users.write().await;
         blocked.clear();
@@ -327,5 +337,71 @@ impl AppState {
 
         let mut alerts = self.alerts.write().await;
         alerts.clear();
+
+        for target in ["rohan", "stranger_77", "ishaan", "diya"] {
+            let _ = self
+                .engine_client
+                .report_refusal("meera", target, "unblock")
+                .await;
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::{extract::State, routing::post, Json, Router};
+    use tokio::sync::Mutex;
+
+    #[tokio::test]
+    async fn seed_history_finishes_all_messages_before_returning() {
+        async fn record(
+            State(events): State<Arc<Mutex<Vec<EngineEventEnvelope>>>>,
+            Json(event): Json<EngineEventEnvelope>,
+        ) -> Json<serde_json::Value> {
+            events.lock().await.push(event);
+            Json(serde_json::json!({
+                "severity": 0, "tier": "low", "reasons": [], "signals": {},
+                "recommended_action": "allow", "simulated": false,
+                "degraded": [], "model_versions": {}
+            }))
+        }
+
+        let events = Arc::new(Mutex::new(Vec::new()));
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let url = format!("http://{}", listener.local_addr().unwrap());
+        let app = Router::new()
+            .route("/v1/analyze", post(record))
+            .with_state(events.clone());
+        let server = tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
+        let mut state = AppState::new(url.clone());
+        state.engine_client = Arc::new(EngineClient::with_key(url, "test-key".into()));
+
+        state.seed_engine_history().await.unwrap();
+        let events = events.lock().await;
+        assert_eq!(events.len(), 17);
+        for chat_id in ["chat_ishaan", "chat_diya"] {
+            let history: Vec<_> = events
+                .iter()
+                .filter(|event| event.channel.conversation_id == chat_id)
+                .collect();
+            assert!(history
+                .windows(2)
+                .all(|pair| pair[0].occurred_at < pair[1].occurred_at));
+            assert!(history
+                .iter()
+                .all(|event| event.context.is_contact && !event.draft));
+        }
+        server.abort();
+    }
+
+    #[tokio::test]
+    async fn seed_history_reports_engine_failure() {
+        let mut state = AppState::new("http://127.0.0.1:1".into());
+        state.engine_client = Arc::new(EngineClient::with_key(String::new(), String::new()));
+        assert!(matches!(
+            state.seed_engine_history().await,
+            Err(crate::engine_client::EngineError::Configuration)
+        ));
     }
 }

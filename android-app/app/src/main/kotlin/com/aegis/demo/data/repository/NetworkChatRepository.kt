@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromJsonElement
-import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.*
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -30,6 +30,7 @@ class NetworkChatRepository(
     private val _chats = MutableStateFlow<List<ChatThread>>(emptyList())
     private val _messages = MutableStateFlow<Map<String, List<SafeMessage>>>(emptyMap())
     private val _calls = MutableStateFlow<List<CallRecord>>(emptyList())
+    private val importedCalls = MutableStateFlow<List<CallRecord>>(emptyList())
     private val _posts = MutableStateFlow<List<Post>>(emptyList())
     private val _alerts = MutableStateFlow<List<AlertItem>>(emptyList())
     private val _scenarioSteps = MutableSharedFlow<ScenarioProgress>(replay = 1)
@@ -101,7 +102,7 @@ class NetworkChatRepository(
                             "call_event" -> {
                                 payload?.let {
                                     val call = json.decodeFromJsonElement<CallRecord>(it)
-                                    _calls.value = listOf(call) + _calls.value
+                                    _calls.update { current -> listOf(call) + current.filterNot { it.id == call.id } }
                                 }
                             }
                             "alert" -> {
@@ -158,7 +159,10 @@ class NetworkChatRepository(
             } catch (e: Exception) { recordError(e) }
 
             try {
-                _calls.value = apiService.getCalls()
+                val serverCalls = apiService.getCalls()
+                val imported = importedCalls.value
+                val ids = imported.map { it.id }.toSet()
+                _calls.update { imported + serverCalls.filterNot { it.id in ids } }
             } catch (e: Exception) { recordError(e) }
         }
     }
@@ -341,10 +345,7 @@ class NetworkChatRepository(
                 body["transcript"] = transcript
             }
             val record = apiService.simulateCall(body)
-            val current = _calls.value.toMutableList()
-            current.removeAll { it.id == record.id }
-            current.add(0, record)
-            _calls.value = current
+            _calls.update { current -> listOf(record) + current.filterNot { it.id == record.id } }
             connectionError.value = null
             Result.success(record)
         } catch (e: Exception) {
@@ -355,19 +356,34 @@ class NetworkChatRepository(
 
     override suspend fun importCallLogCsv(csvText: String): Result<List<CallRecord>> {
         return try {
+            val records = parseCallCsv(csvText)
             val body = csvText.toRequestBody("text/csv".toMediaTypeOrNull())
             val imported = apiService.importCallLog(body)
-            val failed = imported.rows.count {
-                it.outcome !in setOf("imported", "cached") || it.problem != null || it.assessment == null
+            val assessed = imported.rows.mapNotNull { row ->
+                val record = records.getOrNull(row.row - 2) ?: return@mapNotNull null
+                if (row.outcome !in setOf("imported", "cached") || row.problem != null) return@mapNotNull null
+                val assessment = row.assessment as? JsonObject ?: return@mapNotNull null
+                val reasons = assessment["reasons"] as? JsonArray
+                record.copy(safety = record.safety.copy(
+                    severity = assessment["severity"]?.jsonPrimitive?.floatOrNull ?: 0f,
+                    tier = assessment["tier"]?.jsonPrimitive?.contentOrNull ?: "unknown",
+                    reasons = reasons?.mapNotNull { (it as? JsonObject)?.get("text")?.jsonPrimitive?.contentOrNull } ?: emptyList(),
+                    recommended_action = assessment["recommended_action"]?.jsonPrimitive?.contentOrNull ?: "log",
+                    state = "Delivered",
+                    tags = if (record.safety.simulated) listOf("SIMULATED") else emptyList()
+                ))
             }
-            if (failed > 0) {
-                val message = "Call import failed for $failed of ${imported.rows.size} rows. Successful rows may already be saved."
+            val ids = assessed.map { it.id }.toSet()
+            importedCalls.update { current -> assessed + current.filterNot { it.id in ids } }
+            _calls.update { current -> assessed + current.filterNot { it.id in ids } }
+            val failed = imported.rows.size - assessed.size
+            if (failed > 0 || imported.rows.size != records.size) {
+                val message = "Call import incomplete: ${assessed.size} of ${records.size} calls assessed. Some rows may already be saved."
                 connectionError.value = message
                 return Result.failure(IllegalStateException(message))
             }
             connectionError.value = null
-            // Row assessments are not chat call records; the server does not mirror imports yet.
-            Result.success(emptyList())
+            Result.success(assessed)
         } catch (e: Exception) {
             recordError(e)
             Result.failure(e)
@@ -409,6 +425,7 @@ class NetworkChatRepository(
     override suspend fun resetDemo() {
         try {
             requireSuccess(apiService.resetDemo())
+            importedCalls.value = emptyList()
             _messages.value = emptyMap()
             _alerts.value = emptyList()
             refreshAll()

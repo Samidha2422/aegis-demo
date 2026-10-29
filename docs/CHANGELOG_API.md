@@ -1,5 +1,11 @@
 # API Changelog (CHANGELOG_API.md)
 
+## 2026-10-29: Ephemeral uploaded media
+
+- Media uploads return a `/media/{uuid}` URL for validated bytes kept in memory, capped at 100 MiB total; full storage returns 507. Reset or server restart removes them.
+- GET returns the validated MIME type with `Cache-Control: no-store`. URLs are bearer capabilities: anyone with the URL can access the media.
+- Engine errors preserve the upload with an unknown, unscored safety state; blocked senders remain held.
+
 ## 2026-10-29: Engine media integration
 
 - Forward voice uploads to Adapt's multipart `/v1/analyze/audio` endpoint; preserve
@@ -7,7 +13,7 @@
 - `POST /chats/{id}/media` and `POST /recordings` accept an optional `simulated`
   boolean multipart field. Missing audio inference is unscored.
 - `POST /recordings` accepts multipart `file`, optional `chat_id` and `sender_id`,
-  and returns a SafeMessage. Uploaded media bytes are not retained.
+  and returns a SafeMessage. Media retention is updated by the ephemeral media entry above.
 - The engine OpenAPI snapshot includes the new audio endpoint and synthetic context.
 
 All changes, extensions, or adjustments between contracts/engine-openapi.json and docs/API_CHAT.md are tracked here per Operating Rule R4.

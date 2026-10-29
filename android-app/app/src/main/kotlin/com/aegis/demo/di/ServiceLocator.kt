@@ -103,4 +103,14 @@ object ServiceLocator {
     }
 
     fun getRepository(): ChatRepository = _repository.value
+
+    fun getOkHttpClient(): OkHttpClient = okHttpClient
+
+    private var imageLoader: coil.ImageLoader? = null
+    fun getImageLoader(context: Context): coil.ImageLoader {
+        return imageLoader ?: coil.ImageLoader.Builder(context.applicationContext)
+            .okHttpClient(okHttpClient)
+            .respectCacheHeaders(false)
+            .build().also { imageLoader = it }
+    }
 }

@@ -5,10 +5,12 @@ use crate::models::{
 use crate::state::AppState;
 use axum::{
     extract::{Path, Query, State},
-    http::StatusCode,
+    http::{header, StatusCode},
+    response::IntoResponse,
     Json,
 };
 use serde::Deserialize;
+use std::sync::atomic::Ordering;
 
 #[derive(Deserialize)]
 pub struct SendMessageRequest {
@@ -161,6 +163,23 @@ pub async fn store_message(state: &AppState, msg: &SafeMessage) {
 
 pub const MAX_AUDIO_BYTES: usize = 25 * 1024 * 1024;
 const MAX_IMAGE_BYTES: usize = 10 * 1024 * 1024;
+const MAX_STORED_MEDIA_BYTES: usize = 100 * 1024 * 1024;
+
+pub async fn get_media(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+) -> Result<impl IntoResponse, StatusCode> {
+    let media = state.media.read().await;
+    let (mime, bytes) = media.get(&id).ok_or(StatusCode::NOT_FOUND)?;
+    Ok((
+        [
+            (header::CONTENT_TYPE, *mime),
+            (header::CACHE_CONTROL, "no-store"),
+            (header::X_CONTENT_TYPE_OPTIONS, "nosniff"),
+        ],
+        bytes.clone(),
+    ))
+}
 
 pub async fn upload_media(
     State(state): State<AppState>,
@@ -175,15 +194,18 @@ pub(super) async fn upload(
     chat_id: Option<String>,
     mut multipart: axum::extract::Multipart,
 ) -> Result<Json<SafeMessage>, StatusCode> {
+    let generation = state.media_generation.load(Ordering::SeqCst);
     let recording = chat_id.is_none();
     let mut id = chat_id.unwrap_or_else(|| "chat_rohan".into());
     let mut bytes = None;
+    let mut demo_proxy = false;
     let mut kind = if recording { "audio" } else { "image" }.to_owned();
     let mut sender = default_sender();
     let mut simulated = false;
     while let Some(field) = multipart.next_field().await.map_err(|e| e.status())? {
         match field.name() {
             Some("file") if bytes.is_none() => {
+                demo_proxy = field.file_name() == Some("demo_proxy_nsfw.png");
                 let data = field.bytes().await.map_err(|e| e.status())?;
                 if data.is_empty() {
                     return Err(StatusCode::BAD_REQUEST);
@@ -228,22 +250,43 @@ pub(super) async fn upload(
     event.message = None;
     event.media = Some(EngineMedia { mime: mime.into() });
     let verdict = if audio {
-        state.engine_client.score_audio(&event, bytes, mime).await
+        state
+            .engine_client
+            .score_audio(&event, bytes.clone(), mime)
+            .await
     } else {
-        state.engine_client.score_image(&event, bytes, mime).await
-    }
-    .map_err(|_| StatusCode::BAD_GATEWAY)?;
+        state
+            .engine_client
+            .score_image(&event, bytes.clone(), mime)
+            .await
+    };
     let transcript = if audio {
         verdict
-            .modules
-            .get("audio")
-            .and_then(|signal| signal.details.get("transcript"))
-            .and_then(serde_json::Value::as_str)
+            .as_ref()
+            .ok()
+            .and_then(|verdict| {
+                verdict
+                    .modules
+                    .get("audio")
+                    .and_then(|signal| signal.details.get("transcript"))
+                    .and_then(serde_json::Value::as_str)
+            })
             .map(str::to_owned)
     } else {
         None
     };
-    let mut safety = ActionPolicy::apply(&verdict, kind, event.context.recipient_blocked_sender, 0);
+    let mut safety = match verdict {
+        Ok(verdict) => {
+            ActionPolicy::apply(&verdict, kind, event.context.recipient_blocked_sender, 0)
+        }
+        Err(error) => {
+            let mut safety = ActionPolicy::unscored(&error.to_string());
+            if event.context.recipient_blocked_sender {
+                safety.state = "Held".into();
+            }
+            safety
+        }
+    };
     if simulated {
         safety.simulated = true;
         if !safety.tags.iter().any(|tag| tag == "SIMULATED") {
@@ -251,19 +294,44 @@ pub(super) async fn upload(
         }
     }
     let msg = SafeMessage {
-        id: event.event_id,
+        id: event.event_id.clone(),
         chat_id: id,
         sender_id: event.sender_id,
         recipient_id: event.recipient_id,
         kind: kind.into(),
-        text: if audio { String::new() } else { "Image".into() },
-        media_url: None,
+        text: if audio {
+            String::new()
+        } else if simulated && demo_proxy {
+            "DEMO PROXY IMAGE".into()
+        } else {
+            "Image".into()
+        },
+        media_url: Some(format!("/media/{}", event.event_id)),
         transcript,
         timestamp: event.occurred_at,
         safety,
     };
-    // Only the engine's masked transcript is retained; upload bytes are dropped after analysis.
-    store_message(state, &msg).await;
+    {
+        let mut chats = state.chats.write().await;
+        if state.media_generation.load(Ordering::SeqCst) != generation {
+            return Err(StatusCode::CONFLICT);
+        }
+        let mut media = state.media.write().await;
+        if media.values().map(|(_, data)| data.len()).sum::<usize>() + bytes.len()
+            > MAX_STORED_MEDIA_BYTES
+        {
+            return Err(StatusCode::INSUFFICIENT_STORAGE);
+        }
+        media.insert(msg.id.clone(), (mime, bytes));
+        chats
+            .entry(msg.chat_id.clone())
+            .or_default()
+            .push(msg.clone());
+    }
+    let _ = state.tx.send(WsEvent {
+        event: "message".into(),
+        payload: serde_json::to_value(&msg).unwrap_or_default(),
+    });
     Ok(Json(msg))
 }
 
@@ -402,7 +470,7 @@ mod tests {
             let message: SafeMessage = response.json().await.unwrap();
             assert_eq!(message.kind, "audio");
             assert_eq!(message.transcript.as_deref(), Some("Contact [PHONE]"));
-            assert!(message.media_url.is_none());
+            assert!(message.media_url.as_deref().unwrap().starts_with("/media/"));
             assert!(message.text.is_empty());
             assert_eq!(message.safety.state, "Held");
             assert_eq!(message.safety.simulated, simulated);
@@ -502,7 +570,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn unavailable_audio_is_not_stored_or_reported_clean() {
+    async fn unavailable_audio_is_unscored_and_media_is_cleared_on_reset() {
         let mut state = AppState::new("http://127.0.0.1:1".into());
         state.engine_client = Arc::new(EngineClient::with_key(
             "http://127.0.0.1:1".into(),
@@ -511,6 +579,7 @@ mod tests {
         let (url, task) = serve(
             Router::new()
                 .route("/recordings", post(super::super::calls::upload_recording))
+                .route("/media/:id", axum::routing::get(get_media))
                 .with_state(state.clone()),
         )
         .await;
@@ -520,7 +589,46 @@ mod tests {
             .send()
             .await
             .unwrap();
-        assert_eq!(response.status(), StatusCode::BAD_GATEWAY);
+        assert_eq!(response.status(), StatusCode::OK);
+        let message: SafeMessage = response.json().await.unwrap();
+        assert_eq!(message.safety.state, "EngineUnavailable");
+        assert_eq!(message.safety.tier, "unknown");
+        let media_url = format!("{url}{}", message.media_url.unwrap());
+        let media = reqwest::get(&media_url).await.unwrap();
+        assert_eq!(media.headers()["content-type"], "audio/mpeg");
+        assert_eq!(media.headers()["cache-control"], "no-store");
+        assert_eq!(&media.bytes().await.unwrap()[..], b"ID3\x00test");
+        state.reset().await;
+        assert_eq!(
+            reqwest::get(&media_url).await.unwrap().status(),
+            StatusCode::NOT_FOUND
+        );
+        task.abort();
+    }
+
+    #[tokio::test]
+    async fn full_media_store_rejects_upload_without_storing_message() {
+        let state = AppState::new("http://127.0.0.1:1".into());
+        state.media.write().await.insert(
+            "existing".into(),
+            ("image/png", vec![0; MAX_STORED_MEDIA_BYTES]),
+        );
+        let (url, task) = serve(
+            Router::new()
+                .route("/chats/:id/media", post(upload_media))
+                .with_state(state.clone()),
+        )
+        .await;
+        let response = reqwest::Client::new()
+            .post(format!("{url}/chats/chat_rohan/media"))
+            .multipart(form(
+                b"\x89PNG\r\n\x1a\nimage".to_vec(),
+                &[("kind", "image")],
+            ))
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::INSUFFICIENT_STORAGE);
         assert!(!state.chats.read().await.contains_key("chat_rohan"));
         task.abort();
     }
