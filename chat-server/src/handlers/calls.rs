@@ -146,12 +146,8 @@ pub async fn import_call_log(
 }
 
 pub async fn upload_recording(
-    State(_state): State<AppState>,
-) -> (StatusCode, Json<serde_json::Value>) {
-    (
-        StatusCode::NOT_IMPLEMENTED,
-        Json(
-            serde_json::json!({"status": "roadmap", "detail": "Recording upload is not connected; no audio was analyzed"}),
-        ),
-    )
+    State(state): State<AppState>,
+    multipart: axum::extract::Multipart,
+) -> Result<Json<crate::models::SafeMessage>, StatusCode> {
+    super::chats::upload(&state, None, multipart).await
 }

@@ -399,7 +399,8 @@ fun DemoDirectorScreen(
 
             // Adaptive Community Slang Loop (F10 / Scenario 8)
             item {
-                var isSlangConfirmed by remember { mutableStateOf(false) }
+                var slangResult by remember { mutableStateOf<com.aegis.demo.data.model.NudgeResult?>(null) }
+                val isSlangConfirmed = slangResult?.let { it.available && it.severity >= 61f } ?: false
 
                 Text(
                     text = "Adaptive Slang Loop (F10 / Scenario 8)",
@@ -407,7 +408,7 @@ fun DemoDirectorScreen(
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "Zero-shot adaptation to newly emerging code-words via community moderation.",
+                    text = "Check a phrase after a moderator updates the slang list.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -439,7 +440,7 @@ fun DemoDirectorScreen(
                                 border = BorderStroke(1.dp, if (isSlangConfirmed) SafetyTheme.highRiskBorder else SafetyTheme.lowRiskBorder)
                             ) {
                                 Text(
-                                    text = if (isSlangConfirmed) "CONFIRMED HARASSMENT" else "UNRECOGNIZED TERM",
+                                    text = if (slangResult == null) "NOT CHECKED" else if (slangResult?.available == false) "UNAVAILABLE" else slangResult?.tier?.uppercase() ?: "UNKNOWN",
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = if (isSlangConfirmed) SafetyTheme.highRisk else SafetyTheme.lowRisk,
@@ -469,13 +470,13 @@ fun DemoDirectorScreen(
                         ) {
                             Column {
                                 Text(
-                                    text = if (isSlangConfirmed) "Risk Score: 86 / 100 (HIGH)" else "Risk Score: 12 / 100 (LOW)",
+                                    text = slangResult?.let { if (it.available) "Risk score: ${it.severity.toInt()} / 100" else "Safety check unavailable" } ?: "Check the phrase with the engine",
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.SemiBold,
                                     color = if (isSlangConfirmed) SafetyTheme.highRisk else MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
-                                    text = if (isSlangConfirmed) "Flagged: confirmed community slang term 'vexling'" else "Evades standard keyword blacklist",
+                                    text = slangResult?.reasons?.joinToString() ?: "Confirm terms in the moderator dashboard",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -485,19 +486,18 @@ fun DemoDirectorScreen(
                                 FilledTonalButton(
                                     onClick = {
                                         scope.launch {
-                                            repository.confirmSlangTerm("vexling")
-                                            isSlangConfirmed = true
+                                            slangResult = repository.checkNudge("Stop vexling me in the hallway, you creep", "chat_rohan")
                                         }
                                     },
                                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
                                 ) {
                                     Icon(Icons.Default.Verified, contentDescription = null, modifier = Modifier.size(16.dp))
                                     Spacer(modifier = Modifier.width(6.dp))
-                                    Text("Mod Asha Confirms")
+                                    Text("Check phrase")
                                 }
                             } else {
                                 TextButton(
-                                    onClick = { isSlangConfirmed = false },
+                                    onClick = { slangResult = null },
                                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
                                 ) {
                                     Text("Reset Slang")

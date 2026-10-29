@@ -62,6 +62,8 @@ pub struct SafetyObject {
     pub reasons: Vec<String>,
     pub signals: HashMap<String, f32>,
     pub recommended_action: String, // "log", "warn_sender", "blur_media", "throttle", "escalate"
+    #[serde(default)]
+    pub secondary_actions: Vec<String>,
     pub state: String, // "Delivered", "Scanning", "Warned", "Blurred", "Hidden", "Held", "Escalated", "TranscriptOnly", "EngineUnavailable"
     pub simulated: bool,
     pub tags: Vec<String>,
@@ -81,6 +83,7 @@ impl Default for SafetyObject {
             reasons: Vec::new(),
             signals: HashMap::new(),
             recommended_action: "log".to_string(),
+            secondary_actions: Vec::new(),
             state: "Delivered".to_string(),
             simulated: false,
             tags: Vec::new(),
@@ -98,6 +101,8 @@ pub struct EngineVerdict {
     pub reasons: Vec<String>,
     pub signals: HashMap<String, f32>,
     pub recommended_action: String,
+    #[serde(default)]
+    pub secondary_actions: Vec<String>,
     pub simulated: bool,
     pub degraded: Vec<String>,
     pub model_versions: HashMap<String, String>,
@@ -112,6 +117,8 @@ pub struct EngineSignal {
     pub status: String,
     pub backend: String,
     pub confidence: f32,
+    #[serde(default)]
+    pub details: HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -167,6 +174,8 @@ pub struct EngineCall {
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct EventContext {
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub simulated: bool,
     pub is_contact: bool,
     pub recipient_blocked_sender: bool,
     pub recipient_muted_sender: bool,
@@ -176,6 +185,10 @@ pub struct EventContext {
     pub reply_to_event_id: Option<String>,
     #[serde(default)]
     pub mentions: Vec<String>,
+}
+
+fn is_false(value: &bool) -> bool {
+    !value
 }
 
 impl EngineEventEnvelope {

@@ -31,7 +31,8 @@ interface ChatApiService {
         @Path("id") id: String,
         @Part file: MultipartBody.Part,
         @Part("kind") kind: RequestBody,
-        @Part("sender_id") sender: RequestBody
+        @Part("sender_id") sender: RequestBody,
+        @Part("simulated") simulated: RequestBody? = null
     ): SafeMessage
 
     @POST("users/{id}/block")
@@ -62,7 +63,7 @@ interface ChatApiService {
     suspend fun simulateCall(@Body body: Map<String, String>): CallRecord
 
     @POST("calls/log/import")
-    suspend fun importCallLog(@Body body: RequestBody): Response<Unit>
+    suspend fun importCallLog(@Body body: RequestBody): CallImportResult
 
     @GET("demo/baseline")
     suspend fun getBaseline(@Query("conversation") conversation: String): BaselineComparison

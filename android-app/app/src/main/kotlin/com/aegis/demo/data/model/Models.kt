@@ -1,6 +1,7 @@
 package com.aegis.demo.data.model
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 
 @Serializable
 data class Persona(
@@ -67,7 +68,8 @@ data class SafetyObject(
     val tags: List<String> = emptyList(),
     val degraded: List<String> = emptyList(),
     val model_versions: Map<String, String> = emptyMap(),
-    val modules: Map<String, EngineSignal> = emptyMap()
+    val modules: Map<String, EngineSignal> = emptyMap(),
+    val secondary_actions: List<String> = emptyList()
 )
 
 @Serializable
@@ -115,6 +117,20 @@ data class AlertItem(
 )
 
 @Serializable
+data class CallImportResult(
+    val rows: List<CallImportRow>,
+    val atomic: Boolean = false
+)
+
+@Serializable
+data class CallImportRow(
+    val row: Int,
+    val outcome: String,
+    val problem: JsonElement? = null,
+    val assessment: JsonElement? = null
+)
+
+@Serializable
 data class BaselineComparison(
     val conversation_id: String,
     val total_messages: Int,
@@ -151,7 +167,14 @@ data class NudgeResult(
 )
 
 @Serializable
-data class EngineSignal(val score: Float, val label: String, val status: String, val backend: String, val confidence: Float)
+data class EngineSignal(
+    val score: Float,
+    val label: String,
+    val status: String,
+    val backend: String,
+    val confidence: Float,
+    val details: Map<String, JsonElement> = emptyMap()
+)
 
 @Serializable
 data class EngineHealth(val status: String, val version: String, val mock: Boolean, val degraded: List<String>)

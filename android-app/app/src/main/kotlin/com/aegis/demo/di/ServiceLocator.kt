@@ -49,7 +49,8 @@ object ServiceLocator {
     private val fixtureRepository = FixtureRepository()
     private val okHttpClient = OkHttpClient.Builder()
         .connectTimeout(5, TimeUnit.SECONDS)
-        .readTimeout(40, TimeUnit.SECONDS)
+        .readTimeout(120, TimeUnit.SECONDS)
+        .callTimeout(150, TimeUnit.SECONDS)
         .writeTimeout(30, TimeUnit.SECONDS)
         // Message bodies and drafts must never be written to Logcat.
         .build()

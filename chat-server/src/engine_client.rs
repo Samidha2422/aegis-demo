@@ -51,6 +51,8 @@ struct AnalyzeResponse {
     reasons: Vec<Reason>,
     signals: HashMap<String, EngineSignal>,
     recommended_action: String,
+    #[serde(default)]
+    secondary_actions: Vec<String>,
     simulated: bool,
     degraded: Vec<String>,
     model_versions: HashMap<String, String>,
@@ -75,6 +77,7 @@ impl From<AnalyzeResponse> for EngineVerdict {
                 .map(|(k, v)| (k.clone(), v.score))
                 .collect(),
             recommended_action: response.recommended_action,
+            secondary_actions: response.secondary_actions,
             simulated: response.simulated,
             degraded: response.degraded,
             model_versions: response.model_versions,
@@ -180,6 +183,30 @@ impl EngineClient {
         let response: AnalyzeResponse = self
             .json(
                 self.request(reqwest::Method::POST, "/v1/analyze/image")?
+                    .multipart(form),
+            )
+            .await?;
+        Ok(response.into())
+    }
+
+    pub async fn score_audio(
+        &self,
+        event: &EngineEventEnvelope,
+        bytes: Vec<u8>,
+        mime: &str,
+    ) -> Result<EngineVerdict, EngineError> {
+        let metadata = serde_json::to_string(event).map_err(|_| EngineError::Contract)?;
+        let file = reqwest::multipart::Part::bytes(bytes)
+            .file_name("upload")
+            .mime_str(mime)
+            .map_err(|_| EngineError::Contract)?;
+        let form = reqwest::multipart::Form::new()
+            .text("request", metadata)
+            .part("audio", file);
+        let response: AnalyzeResponse = self
+            .json(
+                self.request(reqwest::Method::POST, "/v1/analyze/audio")?
+                    .timeout(Duration::from_secs(120))
                     .multipart(form),
             )
             .await?;

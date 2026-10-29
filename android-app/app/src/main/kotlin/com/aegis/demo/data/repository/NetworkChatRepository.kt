@@ -222,7 +222,10 @@ class NetworkChatRepository(
             val part = MultipartBody.Part.createFormData("file", filename, imageBytes.toRequestBody("application/octet-stream".toMediaTypeOrNull()))
             val kind = "image".toRequestBody("text/plain".toMediaTypeOrNull())
             val sender = (_activePersona.value?.id ?: "meera").toRequestBody("text/plain".toMediaTypeOrNull())
-            val msg = apiService.uploadMedia(chatId, part, kind, sender)
+            val simulated = if (filename == "demo_proxy_nsfw.png") {
+                "true".toRequestBody("text/plain".toMediaTypeOrNull())
+            } else null
+            val msg = apiService.uploadMedia(chatId, part, kind, sender, simulated)
             appendMessage(msg)
             connectionError.value = null
             Result.success(msg)
@@ -234,10 +237,14 @@ class NetworkChatRepository(
 
     override suspend fun sendVoiceNote(chatId: String, audioBytes: ByteArray, filename: String): Result<SafeMessage> {
         return try {
+            require(filename.endsWith(".wav", ignoreCase = true)) { "Choose a WAV audio file." }
             val part = MultipartBody.Part.createFormData("file", filename, audioBytes.toRequestBody("audio/wav".toMediaTypeOrNull()))
             val kind = "voice".toRequestBody("text/plain".toMediaTypeOrNull())
             val sender = (_activePersona.value?.id ?: "meera").toRequestBody("text/plain".toMediaTypeOrNull())
-            val msg = apiService.uploadMedia(chatId, part, kind, sender)
+            val simulated = if (filename == "synthetic_audio.wav") {
+                "true".toRequestBody("text/plain".toMediaTypeOrNull())
+            } else null
+            val msg = apiService.uploadMedia(chatId, part, kind, sender, simulated)
             appendMessage(msg)
             connectionError.value = null
             Result.success(msg)
@@ -349,9 +356,18 @@ class NetworkChatRepository(
     override suspend fun importCallLogCsv(csvText: String): Result<List<CallRecord>> {
         return try {
             val body = csvText.toRequestBody("text/csv".toMediaTypeOrNull())
-            requireSuccess(apiService.importCallLog(body))
-            refreshAll()
-            Result.success(_calls.value)
+            val imported = apiService.importCallLog(body)
+            val failed = imported.rows.count {
+                it.outcome !in setOf("imported", "cached") || it.problem != null || it.assessment == null
+            }
+            if (failed > 0) {
+                val message = "Call import failed for $failed of ${imported.rows.size} rows. Successful rows may already be saved."
+                connectionError.value = message
+                return Result.failure(IllegalStateException(message))
+            }
+            connectionError.value = null
+            // Row assessments are not chat call records; the server does not mirror imports yet.
+            Result.success(emptyList())
         } catch (e: Exception) {
             recordError(e)
             Result.failure(e)
@@ -359,7 +375,7 @@ class NetworkChatRepository(
     }
 
     override suspend fun confirmSlangTerm(term: String): Result<Boolean> {
-        return Result.success(true)
+        return Result.failure(UnsupportedOperationException("Confirm slang terms in the moderator dashboard."))
     }
 
     override fun getAlerts(): Flow<List<AlertItem>> = _alerts.asStateFlow()

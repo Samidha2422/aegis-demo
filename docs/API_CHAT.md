@@ -1,5 +1,10 @@
 # Aegis Chat Platform API Specification (API_CHAT.md)
 
+Voice uploads use `POST /chats/{id}/media` with multipart `file`, `kind=voice`,
+`sender_id`, and optional `simulated=true` for synthetic samples. The SafeMessage
+contains the engine's masked transcript and safety metadata. Audio bytes are not
+retained; missing transcription is marked unscored. Prefer PCM WAV.
+
 **Version:** 1.0.0  
 **Base URL:** `http://localhost:8080` (or `http://10.0.2.2:8080` on emulator / LAN IP)  
 **Protocol:** REST (JSON) + WebSocket (`/ws`)  
@@ -380,8 +385,8 @@ chat-server. See RUNBOOK.md for host credentials, JDK/SDK setup and logged check
 - POST /calls/log/import accepts the UTF-8 safe-import CSV expected by Adapt and
   returns its {atomic:false,rows:[{row,event_id,outcome,assessment?,problem?}]} body.
   Row failures do not roll back previous successful rows. No caller-name scoring.
-- POST /recordings returns HTTP 501 with status=roadmap: uploaded audio bytes are
-  not supported by Adapt's current recording endpoint. No invented ASR result.
+- POST /recordings accepts a multipart audio file and returns an engine-scored
+  SafeMessage. Unavailable transcription is reported as unscored.
 - GET /evidence/export?format=json|html returns actual Adapt evidence for meera.
   Non-2xx is an error, not an empty successful export. Drafts are absent from evidence.
 - POST /demo/reset clears chat memory only. Adapt history must be managed separately.

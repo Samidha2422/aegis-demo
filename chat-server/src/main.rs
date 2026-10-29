@@ -84,7 +84,7 @@ async fn main() -> anyhow::Result<()> {
         // Realtime WebSocket
         .route("/ws", get(handlers::ws::ws_handler))
         .layer(axum::extract::DefaultBodyLimit::max(
-            10 * 1024 * 1024 + 65536,
+            handlers::chats::MAX_AUDIO_BYTES + 65536,
         ))
         .layer(cors)
         .with_state(state);

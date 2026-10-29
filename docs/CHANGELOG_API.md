@@ -1,5 +1,15 @@
 # API Changelog (CHANGELOG_API.md)
 
+## 2026-10-29: Engine media integration
+
+- Forward voice uploads to Adapt's multipart `/v1/analyze/audio` endpoint; preserve
+  masked transcripts, module details, secondary actions, degradation and provenance.
+- `POST /chats/{id}/media` and `POST /recordings` accept an optional `simulated`
+  boolean multipart field. Missing audio inference is unscored.
+- `POST /recordings` accepts multipart `file`, optional `chat_id` and `sender_id`,
+  and returns a SafeMessage. Uploaded media bytes are not retained.
+- The engine OpenAPI snapshot includes the new audio endpoint and synthetic context.
+
 All changes, extensions, or adjustments between contracts/engine-openapi.json and docs/API_CHAT.md are tracked here per Operating Rule R4.
 
 ---
